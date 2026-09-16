@@ -2,8 +2,11 @@ import unittest
 
 import pandas as pd
 
-from ..src.vigipy import bcpnn, gps, ror, rfet, prr, lasso, convert, convert_binary, LongitudinalModel
-from ..src.vigipy.utils import test_dispersion
+# change from V. pavan 16/09/2026
+# from ..src.vigipy import bcpnn, gps, ror, rfet, prr, lasso, convert, convert_binary, LongitudinalModel
+# from ..src.vigipy.utils import test_dispersion
+from vigipy import bcpnn, gps, ror, rfet, prr, lasso, convert, convert_binary, LongitudinalModel
+from vigipy.utils import test_dispersion
 
 df = pd.read_csv("test/fixtures/sample.csv")
 
