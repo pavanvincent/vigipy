@@ -116,7 +116,10 @@ def ror(
             "Count": n11,
             "Expected Count": expected,
             "p_value": RankStat,
-            "PRR": np.exp(log_ror),
+            # Vincent PAVAN, 17/09/2026
+            # correction: replace "PRR = np.exp(log_ror)" by "ROR = np.exp(log_ror)
+            # "PRR": np.exp(log_ror),
+            "ROR": np.exp(log_ror),
             "product margin": n1j,
             "event margin": ni1,
             "fdr": FDR,
