@@ -93,6 +93,9 @@ def ror(
         FDR = np.empty((len(n11),))
 
     LB = norm.ppf(0.025, log_ror, np.sqrt(var_log_ror))
+    # Vincent PAVAN, 17/09/2026
+    # Add the computation of Upper Bound for log(Confidence Intervalle)
+    UB = norm.ppf(0.975,log_ror, np.sqrt(var_log_ror))
     if ranking_statistic == "p_value":
         RankStat = pval_uni
     else:
@@ -120,9 +123,12 @@ def ror(
             # correction: replace "PRR = np.exp(log_ror)" by "ROR = np.exp(log_ror)
             # "PRR": np.exp(log_ror),
             "ROR": np.exp(log_ror),
-            "product margin": n1j,
-            "event margin": ni1,
-            "fdr": FDR,
+            "LB(IC 95%)" : np.exp(LB),
+            "UP(IC 95%)" : np.exp(UB),
+            "p-value" : pval_uni,
+            # "product margin": n1j,
+            # "event margin": ni1,
+            # "fdr": FDR,
         },
         index=np.arange(len(n11)),
     ).sort_values(by=["p_value"])
