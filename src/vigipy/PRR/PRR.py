@@ -122,9 +122,10 @@ def prr(
             "p_value": RankStat,
             "PRR": np.exp(log_prr),
             # Vincent PAVAN, 16/09/2026
-            # Add lower and upper bound for the Confident interval of PRR
+            # Add lower and upper bound for the Confident interval of PRR, and pvalue
             "LB(CI 95%)" : np.exp(LB),
             "UB(CI 95%)" : np.exp(UB),
+            "p-value" : pval_uni,
             # "product margin": n1j,
             # "event margin": ni1,
             # "fdr": FDR,
