@@ -199,7 +199,10 @@ def bcpnn(
                 "Se": Se,
                 "Sp": Sp,
             }
-        ).sort_values(by=[ranking_statistic], ascending=False)
+        # Vincent PAVAN, 16/09/2026
+        # change descending order to ascendign order
+        # ).sort_values(by=[ranking_statistic], ascending=False)
+        ).sort_values(by=[ranking_statistic], ascending=True)
         RC.signals = RC.all_signals.loc[RC.all_signals[ranking_statistic] >= decision_thres]
 
     if num_signals > 0:
