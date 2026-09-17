@@ -94,6 +94,9 @@ def prr(
         FDR = np.empty((len(n11),))
 
     LB = norm.ppf(0.025, log_prr, np.sqrt(var_log_prr))
+    # Vincent PAVAN, 16/09/2026
+    # Add (logarithm) upper bound of the Confidence intervalle of PRR
+    UB = norm.ppf(0.975, log_prr, np.sqrt(var_log_prr))
     if ranking_statistic == "p_value":
         RankStat = pval_uni
     else:
@@ -118,9 +121,13 @@ def prr(
             "Expected Count": expected,
             "p_value": RankStat,
             "PRR": np.exp(log_prr),
-            "product margin": n1j,
-            "event margin": ni1,
-            "fdr": FDR,
+            # Vincent PAVAN, 16/09/2026
+            # Add lower and upper bound for the Confident interval of PRR
+            "LB(CI 95%)" : np.exp(LB),
+            "UB(CI 95%)" : np.exp(UB),
+            # "product margin": n1j,
+            # "event margin": ni1,
+            # "fdr": FDR,
         },
         index=np.arange(len(n11)),
     ).sort_values(by=["p_value"])
