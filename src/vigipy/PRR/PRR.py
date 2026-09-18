@@ -64,7 +64,9 @@ def prr(
     n1j = np.asarray(DATA["product_aes"], dtype=np.float64)
     ni1 = np.asarray(DATA["count_across_brands"], dtype=np.float64)
     num_cell = len(n11)
-    expected = calculate_expected(N, n1j, ni1, n11, expected_method, method_alpha)
+    # Vincent PAVAN, 18/09/2026
+    # no computation of expected
+    # expected = calculate_expected(N, n1j, ni1, n11, expected_method, method_alpha)
 
     n10 = n1j - n11
     n01 = ni1 - n11 + 1e-7
