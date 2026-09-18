@@ -137,7 +137,7 @@ def prr(
         index=np.arange(len(n11)),
     # Vincent PAVAN, 18/09/2026
     # sort by LB
-    ).sort_values(by=["LB(CI 95%)"])
+    ).sort_values(by=["LB(CI 95%)"], ascending = False)
 
     if ranking_statistic == "CI":
         RC.all_signals = RC.all_signals.rename(columns={"p_value": "lower_bound_CI(95%)"}).sort_values(
