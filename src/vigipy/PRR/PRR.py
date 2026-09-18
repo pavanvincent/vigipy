@@ -14,6 +14,8 @@ def prr(
     min_events=1,
     decision_metric="fdr",
     decision_thres=0.05,
+    # Vincent PAVAN, 18/09/2026
+    # sort by lower bound confidence interval
     ranking_statistic="LB",
     expected_method="mantel-haentzel",
     method_alpha=1,
