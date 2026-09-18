@@ -117,8 +117,10 @@ def ror(
             "Product": DATA["product_name"].values,
             "Adverse Event": DATA["ae_name"].values,
             "Count": n11,
-            "Expected Count": expected,
-            "p_value": RankStat,
+            # Vincent PAVAN, 18/09/2026
+            # delete Expected Count and Rankstat from output
+            #"Expected Count": expected,
+            #"p_value": RankStat,
             # Vincent PAVAN, 17/09/2026
             # correction: replace "PRR = np.exp(log_ror)" by "ROR = np.exp(log_ror)
             # "PRR": np.exp(log_ror),
