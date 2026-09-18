@@ -11,12 +11,15 @@ def ror(
     container,
     relative_risk=1,
     min_events=1,
-    decision_metric="fdr",
-    decision_thres=0.05,
     # Vincent PAVAN
-    # sort outpu results using Lower Bounb of 95% confidence interval
+    # delete decision_metric and decision_thres
+    # decision_metric="fdr",
+    # decision_thres=0.05,
+    # Vincent PAVAN
+    # sort output results using Lower Bounb of 95% confidence interval
     ranking_statistic="LB",
-    expected_method="mantel-haentzel",
+    # do not calculate Expected in the ROR 
+    # expected_method="mantel-haentzel",
     method_alpha=1,
 ):
     """
@@ -90,28 +93,31 @@ def ror(
         axis=None,
     )
 
-    FDR = np.minimum(fdr, np.ones((len(fdr),)))
-    if ranking_statistic == "CI":
-        FDR = np.empty((len(n11),))
-
+    # Vincent PAVAN, 18/09/2026
+    # non necessary computation
+    # FDR = np.minimum(fdr, np.ones((len(fdr),)))
+    # if ranking_statistic == "CI":
+    #    FDR = np.empty((len(n11),))
     LB = norm.ppf(0.025, log_ror, np.sqrt(var_log_ror))
     # Vincent PAVAN, 17/09/2026
     # Add the computation of Upper Bound for log(Confidence Intervalle)
     UB = norm.ppf(0.975,log_ror, np.sqrt(var_log_ror))
-    if ranking_statistic == "p_value":
-        RankStat = pval_uni
-    else:
-        RankStat = LB
-
-    if decision_metric == "fdr":
-        num_signals = (FDR <= decision_thres).sum()
-    elif decision_metric == "signals":
-        num_signals = min((RankStat <= decision_thres).sum(), num_cell)
-    elif decision_metric == "rank":
-        if ranking_statistic == "p_value":
-            num_signals = (RankStat <= decision_thres).sum()
-        else:
-            num_signals = (RankStat >= decision_thres).sum()
+    # if ranking_statistic == "p_value":
+    #    RankStat = pval_uni
+    # else:
+    # Vincent PAVAN, 198/09/2026
+    # decision is positive when LB > 0
+    RankStat = LB
+    num_signals = (RankStat > 0).sum()
+     # if decision_metric == "fdr":
+     #   num_signals = (FDR <= decision_thres).sum()
+     # elif decision_metric == "signals":
+     #   num_signals = min((RankStat <= decision_thres).sum(), num_cell)
+     # elif decision_metric == "rank":
+     #   if ranking_statistic == "p_value":
+     #       num_signals = (RankStat <= decision_thres).sum()
+     #   else:
+     #       num_signals = (RankStat >= decision_thres).sum()
 
     RC = Container()
     RC.all_signals = pd.DataFrame(
@@ -137,10 +143,10 @@ def ror(
         index=np.arange(len(n11)),
     ).sort_values(by=["LB(IC 95%)"], ascending = False)
 
-    if ranking_statistic == "CI":
-        RC.all_signals = RC.all_signals.rename(columns={"p_value": "lower_bound_CI(95%)"}).sort_values(
-            by=["lower_bound_CI(95%)"]
-        )
+    # if ranking_statistic == "CI":
+    #    RC.all_signals = RC.all_signals.rename(columns={"p_value": "lower_bound_CI(95%)"}).sort_values(
+    #        by=["lower_bound_CI(95%)"]
+    #    )
 
     RC.signals = RC.all_signals.iloc[
         0:num_signals,
