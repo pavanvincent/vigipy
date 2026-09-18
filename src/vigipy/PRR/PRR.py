@@ -14,7 +14,7 @@ def prr(
     min_events=1,
     decision_metric="fdr",
     decision_thres=0.05,
-    ranking_statistic="p_value",
+    ranking_statistic="LB",
     expected_method="mantel-haentzel",
     method_alpha=1,
     fdr_threshold=0.05,
@@ -133,7 +133,9 @@ def prr(
             # "fdr": FDR,
         },
         index=np.arange(len(n11)),
-    ).sort_values(by=["p_value"])
+    # Vincent PAVAN, 18/09/2026
+    # sort by LB
+    ).sort_values(by=["LB(CI 95%)"])
 
     if ranking_statistic == "CI":
         RC.all_signals = RC.all_signals.rename(columns={"p_value": "lower_bound_CI(95%)"}).sort_values(
