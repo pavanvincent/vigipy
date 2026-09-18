@@ -118,8 +118,10 @@ def prr(
             "Product": DATA["product_name"].values,
             "Adverse Event": DATA["ae_name"].values,
             "Count": n11,
-            "Expected Count": expected,
-            "p_value": RankStat,
+            # Vincent PAVAN, 18/09/2026
+            # delete Expected Count and Rankstat from output
+            # "Expected Count": expected,
+            # "p_value": RankStat,
             "PRR": np.exp(log_prr),
             # Vincent PAVAN, 16/09/2026
             # Add lower and upper bound for the Confident interval of PRR, and pvalue
