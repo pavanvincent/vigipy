@@ -96,10 +96,12 @@ def prr(
         ),
         axis=None,
     )
-
-    FDR = np.minimum(fdr, np.ones((len(fdr),)))
-    if ranking_statistic == "CI":
-        FDR = np.empty((len(n11),))
+    # Vincent PAVAN, 18/09/2026
+    # No neef for FDR computation
+    # deleted of output
+    # FDR = np.minimum(fdr, np.ones((len(fdr),)))
+    # if ranking_statistic == "CI":
+    #    FDR = np.empty((len(n11),))
 
     LB = norm.ppf(0.025, log_prr, np.sqrt(var_log_prr))
     # Vincent PAVAN, 16/09/2026
