@@ -13,7 +13,9 @@ def ror(
     min_events=1,
     decision_metric="fdr",
     decision_thres=0.05,
-    ranking_statistic="p_value",
+    # Vincent PAVAN
+    # sort outpu results using Lower Bounb of 95% confidence interval
+    ranking_statistic="LB",
     expected_method="mantel-haentzel",
     method_alpha=1,
 ):
