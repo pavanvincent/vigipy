@@ -38,34 +38,23 @@ def ror(
     n1j = np.asarray(DATA["product_aes"], dtype=np.float64)
     ni1 = np.asarray(DATA["count_across_brands"], dtype=np.float64)
     num_cell = len(n11)
-    #---------------------------------
+   
     n10 = n1j - n11
     n01 = ni1 - n11 + 1e-7
     n00 = N - (n11 + n10 + n01)
-    #---------------------------------
-    # Computing ROR and ROR Variance
-    #---------------------------------
+   
     log_ror = np.log(n11 * n00 / (n10 * n01))
     var_log_ror = 1.0 / n11 + 1.0 / n10 + 1.0 / n01 + 1.0 / n00
-    #--------------------------------------------------
-    # Computing Confidence Interval from Woolf Method
-    #--------------------------------------------------
-    LB = norm.ppf(0.025, log_ror, np.sqrt(var_log_ror))
-    UB = norm.ppf(0.975,log_ror, np.sqrt(var_log_ror))
-    #----------------------------------------------------
-    # computing p-value using Wald unilateral Wald test
-    #----------------------------------------------------
+    
+    log_LB = norm.ppf(0.025, log_ror, np.sqrt(var_log_ror))
+    log_UB = norm.ppf(0.975,log_ror, np.sqrt(var_log_ror))
+    
     ror_H0 = 1
     pval_uni = 1 - norm.cdf(log_ror, np.log(ror_H0), np.sqrt(var_log_ror))
-    #-------------------------------------------
-    # correcting p_value in case of necessity
-    #------------------------------------------
     pval_uni[pval_uni > 1] = 1
     pval_uni[pval_uni < 0] = 0
-    #------------------------------
-    # computing number of signals
-    #------------------------------
-    num_signals = (LB > 0).sum()
+   
+    num_signals = (log_LB > 0).sum()
 
     RC = Container()
     RC.all_signals = pd.DataFrame(
@@ -77,8 +66,8 @@ def ror(
             "N_{01}": n01,
             "N_{00}": n00,
             "ROR": np.exp(log_ror),
-            "LB(CI 95%)" : np.exp(LB),
-            "UP(CI 95%)" : np.exp(UB),
+            "LB(CI 95%)" : np.exp(log_LB),
+            "UP(CI 95%)" : np.exp(log_UB),
             "p-value" : pval_uni,
         },
         index=np.arange(len(n11)),
