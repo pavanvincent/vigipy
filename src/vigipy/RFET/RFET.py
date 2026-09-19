@@ -110,6 +110,8 @@ def rfet(
     #    num_signals = min((RankStat <= decision_thres).sum(), num_cell)
     # elif decision_metric == "rank":
     #    num_signals = (RankStat <= decision_thres).sum()
+    RankStat = LB
+    num_signals = (RankStat > 0).sum()
 
     RC = Container()
     RC.all_signals = pd.DataFrame(
