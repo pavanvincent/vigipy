@@ -123,7 +123,7 @@ def rfet(
             "ROR": np.exp(log_rfet),
             "LB(95 %)" : LB,
             "UB(95 %)" : UB,
-            "p_value": RankStat,
+            "p_value": pval_uni,
             # "product margin": n1j,
             # "event margin": ni1,
             #"fdr": FDR,
