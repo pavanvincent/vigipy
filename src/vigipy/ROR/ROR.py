@@ -75,25 +75,25 @@ def ror(
     # rankstat = (log_prr - np.log(relative_risk)) / np.sqrt(var_log_prr)
     pval_uni[pval_uni > 1] = 1
     pval_uni[pval_uni < 0] = 0
+    # 
+    # with warnings.catch_warnings():
+    #    warnings.simplefilter("ignore")
+    #    results = lbe(2 * np.minimum(pval_uni, 1 - pval_uni))
+    # pi_c = results[1]
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        results = lbe(2 * np.minimum(pval_uni, 1 - pval_uni))
-    pi_c = results[1]
+    # fdr = pi_c * np.sort(pval_uni[pval_uni <= 0.5]) / (np.arange(1, (pval_uni <= 0.5).sum() + 1) / num_cell)
 
-    fdr = pi_c * np.sort(pval_uni[pval_uni <= 0.5]) / (np.arange(1, (pval_uni <= 0.5).sum() + 1) / num_cell)
-
-    fdr = np.concatenate(
-        (
-            fdr,
-            (
-                pi_c / (2 * np.arange(((pval_uni <= 0.5).sum()), num_cell) / num_cell)
-                + 1
-                - (pval_uni <= 0.5).sum() / np.arange((pval_uni <= 0.5).sum(), num_cell)
-            ),
-        ),
-        axis=None,
-    )
+    # fdr = np.concatenate(
+    #    (
+    #        fdr,
+    #        (
+    #            pi_c / (2 * np.arange(((pval_uni <= 0.5).sum()), num_cell) / num_cell)
+    #            + 1
+    #            - (pval_uni <= 0.5).sum() / np.arange((pval_uni <= 0.5).sum(), num_cell)
+    #        ),
+    #    ),
+    #    axis=None,
+    #)
 
     # Vincent PAVAN, 18/09/2026
     # non necessary computation
@@ -109,8 +109,8 @@ def ror(
     # else:
     # Vincent PAVAN, 198/09/2026
     # decision is positive when LB > 0
-    RankStat = LB
-    num_signals = (RankStat > 0).sum()
+    # RankStat = LB
+    num_signals = (LB > 0).sum()
      # if decision_metric == "fdr":
      #   num_signals = (FDR <= decision_thres).sum()
      # elif decision_metric == "signals":
