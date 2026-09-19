@@ -146,7 +146,7 @@ def ror(
             # "fdr": FDR,
         },
         index=np.arange(len(n11)),
-    ).sort_values(by=["LB(IC 95%)"], ascending = False)
+    ).sort_values(by=["LB(CI 95%)"], ascending = False)
 
     # if ranking_statistic == "CI":
     #    RC.all_signals = RC.all_signals.rename(columns={"p_value": "lower_bound_CI(95%)"}).sort_values(
