@@ -13,14 +13,23 @@ def prr(
     min_events=1,
 ):
     """
-    Calculate the proportional reporting ratio.
-
+   Calculate the reporting odds ratio (ROR):
+    - Confidence Intervalle [LB, UP] at 95% estimated using Woolf method 
+    - Alert Signal if log(LB) > 0
+    - p-value computed using Wald unilateral test
+    
     Arguments:
         container: A DataContainer object produced by the convert()
                     function from data_prep.py
 
         min_events: The min number of AE reports to be considered a signal
 
+    Outputs:
+        product name, adverse event
+        N_00, N_01, N_10, N_11,
+        PRR, LB, UP,
+        p-value,
+        number of signals
 
     """
     DATA = container.data
