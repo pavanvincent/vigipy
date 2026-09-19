@@ -13,7 +13,7 @@ def prr(
     min_events=1,
 ):
     """
-   Calculate the reporting odds ratio (ROR):
+   Calculate the Proportional Reporting Ratio (PRR):
     - Confidence Intervalle [LB, UP] at 95% estimated using Woolf method 
     - Alert Signal if log(LB) > 0
     - p-value computed using Wald unilateral test
@@ -65,32 +65,17 @@ def prr(
         {
             "Product": DATA["product_name"].values,
             "Adverse Event": DATA["ae_name"].values,
-            "Count": n11,
-            # Vincent PAVAN, 18/09/2026
-            # delete Expected Count and Rankstat from output
-            # "Expected Count": expected,
-            # "p_value": RankStat,
+            "N_{11}": n11,
+            "N_{10}": n10,
+            "N_{01}": n01,
+            "N_{00}": n00,
             "PRR": np.exp(log_prr),
-            # Vincent PAVAN, 16/09/2026
-            # Add lower and upper bound for the Confident interval of PRR, and pvalue
-            "LB(CI 95%)" : np.exp(LB),
-            "UB(CI 95%)" : np.exp(UB),
+            "LB(CI 95%)" : np.exp(log_LB),
+            "UP(CI 95%)" : np.exp(log_UB),
             "p-value" : pval_uni,
-            # "product margin": n1j,
-            # "event margin": ni1,
-            # "fdr": FDR,
         },
         index=np.arange(len(n11)),
-    # Vincent PAVAN, 18/09/2026
-    # sort by LB
     ).sort_values(by=["LB(CI 95%)"], ascending = False)
-
-    # Vincent PAVAN, 18/09/2026
-    # rankign_statistic is LB
-    # if ranking_statistic == "CI":
-    #    RC.all_signals = RC.all_signals.rename(columns={"p_value": "lower_bound_CI(95%)"}).sort_values(
-    #        by=["lower_bound_CI(95%)"]
-    #    )
 
     RC.signals = RC.all_signals.iloc[
         0:num_signals,
