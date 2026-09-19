@@ -95,12 +95,15 @@ def rfet(
 
     FDR = np.minimum(fdr, np.ones((len(fdr),)))
 
-    if decision_metric == "fdr":
-        num_signals = (FDR <= decision_thres).sum()
-    elif decision_metric == "signals":
-        num_signals = min((RankStat <= decision_thres).sum(), num_cell)
-    elif decision_metric == "rank":
-        num_signals = (RankStat <= decision_thres).sum()
+    # Vincent PAVAN, 20/09/2026
+    # change signal criterion decision
+    # LB(95 %) > 0
+    # if decision_metric == "fdr":
+    #    num_signals = (FDR <= decision_thres).sum()
+    # elif decision_metric == "signals":
+    #    num_signals = min((RankStat <= decision_thres).sum(), num_cell)
+    # elif decision_metric == "rank":
+    #    num_signals = (RankStat <= decision_thres).sum()
 
     RC = Container()
     RC.all_signals = pd.DataFrame(
