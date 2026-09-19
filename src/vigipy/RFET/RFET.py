@@ -62,8 +62,9 @@ def rfet(
     var_log_rfet = 1.0 / n11 + 1.0 / n10 + 1.0 / n01 + 1.0 / n00
     # Vincent PAVAN, 20/09/2026
     # add LB and UP, confidence inervalle 95%
-    LB = 
-    UB = 
+    LB = norm.ppf(0.025, log_rfet, np.sqrt(var_log_rfet))
+    UB = norm.ppf(0.975,log_rfet, np.sqrt(var_log_rfet))
+    
     pval_fish_uni = np.empty((num_cell))
     for p in range(num_cell):
         table = [[n11[p], n10[p]], [n01[p], n00[p]]]
