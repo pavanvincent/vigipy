@@ -11,14 +11,23 @@ def rfet(
     mid_pval=False,
 ):
     """
-    Calculate the reporting odds ratio.
-
+    Calculate the reporting odds ratio (ROR):
+    - Confidence Intervalle [LB, UP] at 95% estimated using Woolf method 
+    - Alert Signal if log(LB) > 0
+    - p-value computed using exact Fischer test
+    
     Arguments:
         container: A DataContainer object produced by the convert()
                     function from data_prep.py
 
-
         min_events: The min number of AE reports to be considered a signal
+
+    Outputs:
+        product name, adverse event
+        N_00, N_01, N_10, N_11,
+        ROR, LB, UP,
+        p-value,
+        number of signals
 
     """
     DATA = container.data
@@ -38,8 +47,8 @@ def rfet(
 
     log_rfet = np.log(n11 * n00 / (n10 * n01))
     var_log_rfet = 1.0 / n11 + 1.0 / n10 + 1.0 / n01 + 1.0 / n00
-    LB = norm.ppf(0.025, log_rfet, np.sqrt(var_log_rfet))
-    UB = norm.ppf(0.975,log_rfet, np.sqrt(var_log_rfet))
+    log_LB = norm.ppf(0.025, log_rfet, np.sqrt(var_log_rfet))
+    log_UB = norm.ppf(0.975,log_rfet, np.sqrt(var_log_rfet))
     
     pval_fish_uni = np.empty((num_cell))
     for p in range(num_cell):
@@ -55,10 +64,8 @@ def rfet(
     pval_uni = pval_fish_uni
     pval_uni[pval_uni > 1] = 1
     pval_uni[pval_uni < 0] = 0
-    RankStat = pval_uni
-
    
-    num_signals = (LB > 0).sum()
+    num_signals = (log_LB > 0).sum()
 
     RC = Container()
     RC.all_signals = pd.DataFrame(
@@ -68,8 +75,8 @@ def rfet(
             "Count": n11,
             # "Expected Count": expected,
             "ROR": np.exp(log_rfet),
-            "LB(95 %)" : LB,
-            "UB(95 %)" : UB,
+            "LB(95 %)" : np.exp(log_LB),
+            "UB(95 %)" : np.exp(log_UB),
             "p_value": pval_uni,
         },
         index=np.arange(len(n11)),
