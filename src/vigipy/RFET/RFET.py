@@ -82,7 +82,7 @@ def rfet(
             "p-value" : pval_uni,
         },
         index=np.arange(len(n11)),
-    ).sort_values(by=["LB(95 %)"], ascending = False)
+    ).sort_values(by=["LB(CI 95 %)"], ascending = False)
 
     RC.signals = RC.all_signals.iloc[
         0:num_signals,
