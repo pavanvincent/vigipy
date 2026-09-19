@@ -9,7 +9,7 @@ from ..utils import calculate_expected
 
 def ror(
     container,
-    relative_risk=1,
+    # relative_risk=1,
     min_events=1,
     # Vincent PAVAN
     # delete decision_metric and decision_thres
@@ -17,7 +17,7 @@ def ror(
     # decision_thres=0.05,
     # Vincent PAVAN
     # sort output results using Lower Bounb of 95% confidence interval
-    ranking_statistic="LB",
+    # ranking_statistic="LB",
     # do not calculate Expected in the ROR 
     # expected_method="mantel-haentzel",
     # method_alpha=1,
@@ -71,8 +71,10 @@ def ror(
 
     log_ror = np.log(n11 * n00 / (n10 * n01))
     var_log_ror = 1.0 / n11 + 1.0 / n10 + 1.0 / n01 + 1.0 / n00
-    pval_uni = 1 - norm.cdf(log_ror, np.log(relative_risk), np.sqrt(var_log_ror))
-    # rankstat = (log_prr - np.log(relative_risk)) / np.sqrt(var_log_prr)
+    # computing p-value using Wald unilateral Wald test
+    ror_H0 = 1
+    pval_uni = 1 - norm.cdf(log_ror, np.log(ror_H0), np.sqrt(var_log_ror))
+    # correcting p_value in case of necessity
     pval_uni[pval_uni > 1] = 1
     pval_uni[pval_uni < 0] = 0
     # 
@@ -127,6 +129,8 @@ def ror(
             "Product": DATA["product_name"].values,
             "Adverse Event": DATA["ae_name"].values,
             "Count": n11,
+            "product margin": n1j,
+            "event margin": ni1,
             # Vincent PAVAN, 18/09/2026
             # delete Expected Count and Rankstat from output
             #"Expected Count": expected,
@@ -135,11 +139,10 @@ def ror(
             # correction: replace "PRR = np.exp(log_ror)" by "ROR = np.exp(log_ror)
             # "PRR": np.exp(log_ror),
             "ROR": np.exp(log_ror),
-            "LB(IC 95%)" : np.exp(LB),
-            "UP(IC 95%)" : np.exp(UB),
+            "LB(CI 95%)" : np.exp(LB),
+            "UP(CI 95%)" : np.exp(UB),
             "p-value" : pval_uni,
-            # "product margin": n1j,
-            # "event margin": ni1,
+            
             # "fdr": FDR,
         },
         index=np.arange(len(n11)),
