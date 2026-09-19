@@ -52,13 +52,18 @@ def rfet(
     n1j = np.asarray(DATA["product_aes"], dtype=np.float64)
     ni1 = np.asarray(DATA["count_across_brands"], dtype=np.float64)
     num_cell = len(n11)
-    expected = calculate_expected(N, n1j, ni1, n11, expected_method, method_alpha)
+    # expected = calculate_expected(N, n1j, ni1, n11, expected_method, method_alpha)
 
     n10 = n1j - n11
     n01 = ni1 - n11 + 1e-7
     n00 = N - (n11 + n10 + n01)
 
     log_rfet = np.log(n11 * n00 / (n10 * n01))
+    var_log_rfet = 1.0 / n11 + 1.0 / n10 + 1.0 / n01 + 1.0 / n00
+    # Vincent PAVAN, 20/09/2026
+    # add LB and UP, confidence inervalle 95%
+    LB = 
+    UB = 
     pval_fish_uni = np.empty((num_cell))
     for p in range(num_cell):
         table = [[n11[p], n10[p]], [n01[p], n00[p]]]
@@ -111,15 +116,17 @@ def rfet(
             "Product": DATA["product_name"].values,
             "Adverse Event": DATA["ae_name"].values,
             "Count": n11,
-            "Expected Count": expected,
+            # "Expected Count": expected,
+            "ROR": np.exp(log_rfet),
+            "LB(95 %)" : LB,
+            "UB(95 %)" : UB,
             "p_value": RankStat,
-            "PRR": np.exp(log_rfet),
-            "product margin": n1j,
-            "event margin": ni1,
-            "fdr": FDR,
+            # "product margin": n1j,
+            # "event margin": ni1,
+            #"fdr": FDR,
         },
         index=np.arange(len(n11)),
-    ).sort_values(by=["p_value"])
+    ).sort_values(by=["LB(95 %)"], ascending = False)
 
     RC.signals = RC.all_signals.iloc[
         0:num_signals,
