@@ -173,7 +173,7 @@ def bcpnn(
             "count/expected": (count / E),
             "count/expected": 2**(IC),
             "lower bound" = 2**(lower_bound),
-            "upper_bound" = 2**(upper_bound)
+            "upper_bound" = 2**(upper_bound),
             "Count": count,
             "Expected Count": E,
             "product margin": n1j,
