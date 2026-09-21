@@ -11,7 +11,6 @@ trigamma = np.vectorize(gamma_functions.trigamma)
 
 def bcpnn(
     container,
-    relative_risk=1,
     min_events=1,
     decision_metric="rank",
     decision_thres=0.05,
@@ -22,13 +21,12 @@ def bcpnn(
     method_alpha=1,
 ):
     """
-    A Bayesian Confidence Propogation Neural Network.
+    A Bayesian Confidence Propogation Neural Network. 
+
 
     Arguments:
         container: A DataContainer object produced by the convert()
                     function from data_prep.py
-
-        relative_risk (int/float): The relative risk value
 
         min_events: The min number of AE reports to be considered a signal
 
@@ -88,14 +86,16 @@ def bcpnn(
         IC_variance = np.asarray(
             (np.log(2) ** -2)
             * (
-                trigamma(r1)
-                - trigamma(r1 + r2b)
-                + (trigamma(p1) - trigamma(p1 + p2) + trigamma(q1) - trigamma(q1 + q2))
+                (trigamma(r1)
+                - trigamma(r1 + r2b))
+                + (trigamma(p1) - trigamma(p1 + p2)) + (trigamma(q1) - trigamma(q1 + q2))
             ),
             dtype=np.float64,
         )
-        posterior_prob = norm.cdf(np.log(relative_risk), IC, np.sqrt(IC_variance))
+        relative_risk=1
+        posterior_prob = norm.cdf(np.log2(relative_risk), IC, np.sqrt(IC_variance))
         lower_bound = norm.ppf(0.025, IC, np.sqrt(IC_variance))
+        upper_bound = norm.ppf(0.975, IC, np.sqrt(IC_variance))
     else:
         num_MC = float(num_MC)
         # Priors for the contingency table
