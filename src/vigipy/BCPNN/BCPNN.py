@@ -118,6 +118,7 @@ def bcpnn(
 
         posterior_prob = []
         lower_bound = []
+        relative_risk=1
         for m in range(num_cell):
             alpha = [g11[m], g10[m], g01[m], g00[m]]
             p = np.random.dirichlet(alpha, int(num_MC))
