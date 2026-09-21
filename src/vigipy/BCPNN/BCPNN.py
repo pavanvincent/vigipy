@@ -126,8 +126,8 @@ def bcpnn(
             p11 = p[:, 0]
             p1_ = p11 + p[:, 1]
             p_1 = p11 + p[:, 2]
-            ic_monte = np.log(p11 / (p1_ * p_1))
-            temp = 1 * (ic_monte < np.log(relative_risk))
+            ic_monte = np.log2(p11 / (p1_ * p_1))
+            temp = 1 * (ic_monte < np.log2(relative_risk))
             posterior_prob.append(sum(temp) / num_MC)
             lower_bound.append(ic_monte[round(num_MC * 0.025)])
             upper_bound.append(ic_monte[round(num_MC * 0.975)])
