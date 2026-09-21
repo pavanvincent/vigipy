@@ -128,8 +128,10 @@ def bcpnn(
             temp = 1 * (ic_monte < np.log(relative_risk))
             posterior_prob.append(sum(temp) / num_MC)
             lower_bound.append(ic_monte[round(num_MC * 0.025)])
+            upper_bound.append(ic_monte[round(num_MC * 0.975)])
         posterior_prob = np.asarray(posterior_prob)
         lower_bound = np.asarray(lower_bound)
+        upper_bound = np.asarray(upper_bound)
 
     if ranking_statistic == "p_value":
         RankStat = posterior_prob
