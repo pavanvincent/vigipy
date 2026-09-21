@@ -189,7 +189,7 @@ def bcpnn(
                 "Product": name,
                 "Adverse Event": ae,
                 "quantile": RankStat,
-                "count/expected": (count / E)
+                "count/expected": (count / E),
                 "Count": count,
                 "Expected Count": E,
                 "product margin": n1j,
