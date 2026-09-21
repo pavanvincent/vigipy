@@ -165,42 +165,26 @@ def bcpnn(
     RC.param["input_params"] = input_params
 
     # SIGNALS RESULTS and presentation
-    if ranking_statistic == "p_value":
-        RC.all_signals = pd.DataFrame(
-            {
-                "Product": name,
-                "Adverse Event": ae,
-                "Count": count,
-                "Expected Count": E,
-                "p_value": RankStat,
-                "count/expected": (count / E),
-                "product margin": n1j,
-                "event margin": ni1,
-                "fdr": FDR,
-                "FNR": FNR,
-                "Se": Se,
-                "Sp": Sp,
-            }
-        ).sort_values(by=[ranking_statistic])
-        RC.signals = RC.all_signals.loc[RC.all_signals[ranking_statistic] <= decision_thres]
-    else:
-        RC.all_signals = pd.DataFrame(
-            {
-                "Product": name,
-                "Adverse Event": ae,
-                "quantile": RankStat,
-                "count/expected": (count / E),
-                "Count": count,
-                "Expected Count": E,
-                "product margin": n1j,
-                "event margin": ni1,
-                "fdr": FDR,
-                "FNR": FNR,
-                "Se": Se,
-                "Sp": Sp,
-            }
-        ).sort_values(by=[ranking_statistic], ascending=False)
-        RC.signals = RC.all_signals.loc[RC.all_signals[ranking_statistic] > 0]
+    RC.all_signals = pd.DataFrame(
+        {
+            "Product": name,
+            "Adverse Event": ae,
+            "quantile": RankStat,
+            "count/expected": (count / E),
+            "count/expected": 2**(IC),
+            "lower bound" = 2**(lower_bound),
+            "upper_bound" = 2**(upper_bound)
+            "Count": count,
+            "Expected Count": E,
+            "product margin": n1j,
+            "event margin": ni1,
+            "fdr": FDR,
+            "FNR": FNR,
+            "Se": Se,
+            "Sp": Sp,
+        }
+    ).sort_values(by=[ranking_statistic], ascending=False)
+    RC.signals = RC.all_signals.loc[RC.all_signals[ranking_statistic] > 0]
 
     
     if num_signals > 0:
