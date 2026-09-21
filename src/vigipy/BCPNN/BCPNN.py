@@ -188,10 +188,10 @@ def bcpnn(
             {
                 "Product": name,
                 "Adverse Event": ae,
+                "quantile": RankStat,
+                "count/expected": (count / E)
                 "Count": count,
                 "Expected Count": E,
-                "quantile": RankStat,
-                "count/expected": (count / E),
                 "product margin": n1j,
                 "event margin": ni1,
                 "fdr": FDR,
@@ -200,9 +200,6 @@ def bcpnn(
                 "Sp": Sp,
             }
         ).sort_values(by=[ranking_statistic], ascending=False)
-        # Vincent PAVAN, 18/09/2026
-        # change signal criteriom to quantile > 0
-        # RC.signals = RC.all_signals.loc[RC.all_signals[ranking_statistic] >= decision_thres]
         RC.signals = RC.all_signals.loc[RC.all_signals[ranking_statistic] > 0]
 
     
