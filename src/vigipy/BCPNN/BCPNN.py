@@ -172,7 +172,7 @@ def bcpnn(
             "quantile": RankStat,
             "count/expected": (count / E),
             "count/expected": 2**(IC),
-            "lower bound" = 2**(lower_bound),
+            "lower_bound" = 2**(lower_bound),
             "upper_bound" = 2**(upper_bound),
             "Count": count,
             "Expected Count": E,
