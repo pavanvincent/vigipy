@@ -325,10 +325,10 @@ def gps(
                 "Count": count,
                 "Expected Count": expected,
                 "EBGM" : np.float64(2**EBlog2),
-                "EB025 WHO": LB025
+                "EB025 WHO": LB025,
                 "EB05 FDA" : LB05,
                 "EB95" : UB95,
-                "EB975": UB975
+                "EB975": UB975,
                 "quantile": RankStat,
                 "count/expected": (count / expected),
                 "product margin": n1j,
