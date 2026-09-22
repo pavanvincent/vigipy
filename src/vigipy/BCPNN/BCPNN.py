@@ -14,8 +14,6 @@ def bcpnn(
     min_events=1,
     MC=False,
     num_MC=10000,
-    expected_method="mantel-haentzel",
-    method_alpha=1,
 ):
     """
     A Bayesian Confidence Propogation Neural Network. 
@@ -44,7 +42,6 @@ def bcpnn(
     n11 = DATA["events"].to_numpy(dtype=np.float64)
     n1j = DATA["product_aes"].to_numpy(dtype=np.float64)
     ni1 = DATA["count_across_brands"].to_numpy(dtype=np.float64)
-    E = calculate_expected(N, n1j, ni1, n11, expected_method, method_alpha)
 
     n10 = n1j - n11
     n01 = ni1 - n11
