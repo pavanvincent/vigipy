@@ -148,11 +148,6 @@ def bcpnn(
     RC.signals = RC.all_signals.loc[RC.all_signals["lower_bound"] > 1]
     
     num_signals = len(RC.signals)
-    
-    if num_signals > 0:
-        num_signals -= 1
-    else:
-        num_signals = 0
 
     # Number of signals
     RC.num_signals = num_signals
