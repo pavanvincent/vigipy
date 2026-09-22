@@ -3,7 +3,6 @@ import pandas as pd
 from scipy.stats import norm
 from sympy.functions.special import gamma_functions
 from ..utils import Container
-from ..utils import calculate_expected
 
 digamma = np.vectorize(gamma_functions.digamma)
 trigamma = np.vectorize(gamma_functions.trigamma)
