@@ -275,7 +275,7 @@ def gps(
             "posterior_probability": posterior_probability,
         }
     )
-    RES.all_signals = RES.all_signals.sort_values(by=[ranking_statistic], ascending=False)
+    RES.all_signals = RES.all_signals.sort_values(by=["LB05 FDA"], ascending=False)
     
 
     # List of Signals generated according to the method
