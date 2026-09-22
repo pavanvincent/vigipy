@@ -34,7 +34,7 @@ def gps(
     relative_risk=1,
     min_events=1,
     decision_metric="rank",
-    decision_thres=0.025,
+    decision_thres=0.05,
     ranking_statistic="quantile",
     truncate=False,
     truncate_thres=1,
@@ -84,7 +84,7 @@ def gps(
         The method used to calculate the expected event counts. Options include "mantel-haentzel", "negative-binomial" and "poisson".
     method_alpha : float, optional (default=1)
         Dispersion parameter used in the expected value calculation method.
-    minimization_method : str, optional (default="CG")
+    minimization_method : str, optional (default="SLSQP")
         The optimization method used for estimating prior parameters if `prior_param` is None.
     minimization_bounds : tuple, optional
         Bounds on the prior parameter values for the optimization process.
@@ -124,12 +124,24 @@ def gps(
     DATA = container.data
     N = container.N
 
+    #-------------------------------------------------
+    # Compute expected values using expected_method
+    #------------------------------------------------
     n11 = np.asarray(DATA["events"], dtype=np.float64)
     n1j = np.asarray(DATA["product_aes"], dtype=np.float64)
     ni1 = np.asarray(DATA["count_across_brands"], dtype=np.float64)
     expected = calculate_expected(N, n1j, ni1, n11, expected_method, method_alpha)
     p_out = True
 
+    #----------------------------------------------------------------------------------------
+    # Launch optimization algorithm to find hypergeometrical parameters of the prior
+    # priori is sum of two independant Gamma laws, whose parameters are 
+    # alpha_1, beta_1, alpha_2, beta_2, w
+    # such that prior density is : w * Gamma(alpha_1, beta_1) + (1-w) * Gamma(alpha_2,beta_2)
+    # optimization algorithm finds alpha_1, beta_1, alpha_2, beta_2, w by minimizing
+    # 1) either non truncated likelihood (imput argument truncated = False)
+    # 2) either truncated objective likelihood (imput argument truncated = true
+    #-----------------------------------------------------------------------------------------
     if prior_param is None:
         p_out = False
         if minimization_method not in BOUNDED_METHODS:
@@ -177,6 +189,9 @@ def gps(
                 **minimization_options,
             )
 
+        #--------------------------------------------------------------------------------
+        # get prior parameters alpha_1, beta_1, alpha_2, beta_2, w in "priors" variable
+        #--------------------------------------------------------------------------------
         priors = p_out.x
         if np.any(priors < 0) or priors[4] > 1:
             warnings.warn(
@@ -184,6 +199,9 @@ def gps(
             )
         code_convergence = p_out.message
 
+    #--------------------------------------------------------
+    # exclude product / ae pairs with low numbers of events
+    #--------------------------------------------------------
     if min_events > 1:
         DATA = DATA[DATA.events >= min_events]
         expected = expected[n11 >= min_events]
@@ -191,10 +209,12 @@ def gps(
         ni1 = ni1[n11 >= min_events]
         n11 = n11[n11 >= min_events]
 
+    #------------------------------------------------------------------------
+    # Calculation of the posterior probability of the null hypothesis p_{H0}
+    #------------------------------------------------------------------------
     num_cell = len(n11)
     posterior_probability = []
 
-    # Posterior probability of the null hypothesis
     qdb1 = nbinom(n=priors[0], p=priors[1] / (priors[1] + expected)).pmf(n11)
     qdb2 = nbinom(n=priors[2], p=priors[3] / (priors[3] + expected)).pmf(n11)
 
@@ -203,14 +223,19 @@ def gps(
     gd1 = gdtr(relative_risk, priors[0] + n11, priors[1] + expected)
     gd2 = gdtr(relative_risk, priors[2] + n11, priors[3] + expected)
     posterior_probability = Qn * gd1 + (1 - Qn) * gd2
-
+    
+    #----------------------------
+    # Calculation of log2(EBGM)
+    #----------------------------
     dg1 = digamma(priors[0] + n11)
     dgterm1 = dg1 - np.log(priors[1] + expected)
     dg2 = digamma(priors[2] + n11)
     dgterm2 = dg2 - np.log(priors[3] + expected)
     EBlog2 = (np.log(2) ** -1) * (Qn * dgterm1 + (1 - Qn) * dgterm2)
 
-    # Calculation of the Lower Bound at level 5%
+    #-----------------------------------------------------------------------
+    # Calculation of the Lower Bound at level 5% using DuMouchel algorithm
+    #-----------------------------------------------------------------------
     LB05 = quantiles(
         0.05,
         Qn,
@@ -220,7 +245,9 @@ def gps(
         priors[3] + expected,
     )
 
-    # Calculation of the Uopoer Bound at level 95%
+    #-------------------------------------------------------------------------
+    # Calculation of the Uppoer Bound at level 95% using DuMouchel algorithm
+    #-------------------------------------------------------------------------
     UB95 = quantiles(
         0.95,
         Qn,
@@ -229,11 +256,11 @@ def gps(
         priors[2] + n11,
         priors[3] + expected,
     )
-
-    
-    # ranking_statistic == "quantile"
-    # RankStat = LB05
-
+   
+    #-----------------------------------------------------------------
+    # Computing FDR (False Discovery Rate) FNR (False Negative Rate)
+    # Computing Se (Sensitivity) Sp (specificity)
+    #-----------------------------------------------------------------
     post_cumsum = np.cumsum(posterior_probability)
     post_1_cumsum = np.cumsum(1 - posterior_probability)
     post_1_sum = sum(1 - posterior_probability)
@@ -244,9 +271,11 @@ def gps(
     Se = np.cumsum((1 - posterior_probability)) / post_1_sum
     Sp = np.array(list(reversed(post_cumsum))) / (num_cell - post_1_sum)
 
+    #-------------------------
+    # return results
+    #------------------------
     name = DATA["product_name"]
     ae = DATA["ae_name"]
-    count = n11
     RES = Container(params=True)
     # list of the parameters used
     RES.param["input_params"] = input_params
@@ -254,8 +283,9 @@ def gps(
     RES.param["prior_param"] = priors
     RES.param["convergence"] = code_convergence
 
+    #--------------------------------------
     # SIGNALS RESULTS and presentation
-    # ranking_statistic == "quantile"
+    #--------------------------------------
     RES.all_signals = pd.DataFrame(
         {
             "Product": name,
@@ -263,14 +293,14 @@ def gps(
             "EBGM": np.float64(2**EBlog2),
             "LB05 FDA" : LB05,
             "UB95 FDA" : UB95,
-            "N_{11}": count,
+            "p_{H0}": posterior_probability,
+            "N_{11}": n11,
             "product margin": n1j,
             "event margin": ni1,
             "fdr": FDR,
             "FNR": FNR,
             "Se": Se,
-            "Sp": Sp,
-            "posterior_probability": posterior_probability,
+            "Sp": Sp, 
         }
     )
     RES.all_signals = RES.all_signals.sort_values(by=["LB05 FDA"], ascending=False)
@@ -280,7 +310,7 @@ def gps(
     RES.all_signals.index = np.arange(0, len(RES.all_signals.index))
 
     # Number of signal according to standar FDA: LB05 >= 2
-    num_signals = np.sum(RankStat >= np.float64(2))
+    num_signals = np.sum(LB05 >= np.float64(2))
     RES.num_signals = num_signals
     RES.signals = RES.all_signals.iloc[0:num_signals,]
    
