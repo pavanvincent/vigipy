@@ -35,7 +35,7 @@ def gps(
     min_events=1,
     decision_metric="rank",
     decision_thres=0.05,
-    ranking_statistic="log2",
+    ranking_statistic="quantile",
     truncate=False,
     truncate_thres=1,
     prior_init={
@@ -293,6 +293,7 @@ def gps(
                 "Adverse Event": ae,
                 "Count": count,
                 "Expected Count": expected,
+                "EBGM" : 2**EBlog2
                 "quantile": RankStat,
                 "count/expected": (count / expected),
                 "product margin": n1j,
