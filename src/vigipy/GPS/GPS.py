@@ -277,10 +277,10 @@ def gps(
             "Product": name,
             "Adverse Event": ae,
             "EBGM" : np.float64(2**EBlog2),
-            "EB025 WHO": LB025,
-            "EB05 FDA" : LB05,
-            "EB95" : UB95,
-            "EB975": UB975,
+            "EB025_WHO": LB025,
+            "EB05_FDA" : LB05,
+            "EB95_FDA" : UB95,
+            "EB975_WHO": UB975,
             "Count": count,
             "product margin": n1j,
             "event margin": ni1,
@@ -290,7 +290,7 @@ def gps(
             "Sp": Sp,
             }
         )
-        RES.all_signals = RES.all_signals.sort_values(by=["EB025 WHO"], ascending=False)
+        RES.all_signals = RES.all_signals.sort_values(by=["EB025_WHO"], ascending=False)
 
 
     # List of Signals generated according to the method
