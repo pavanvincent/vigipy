@@ -239,18 +239,10 @@ def gps(
     post_1_sum = sum(1 - posterior_probability)
     post_range = np.arange(1, len(posterior_probability) + 1)
 
-    if ranking_statistic == "p_value":
-        FDR = post_cumsum / np.array(post_range)
-        FNR = np.array(post_1_cumsum) / ((num_cell - post_range) + 1e-7)
-        Se = np.cumsum((1 - posterior_probability)) / post_1_sum
-        Sp = np.array(post_cumsum) / (num_cell - post_1_sum)
-    else:
-        FDR = post_cumsum / post_range
-        FNR = np.array(list(reversed(post_1_cumsum))) / ((num_cell - post_range) + 1e-7)
-        Se = np.cumsum((1 - posterior_probability)) / post_1_sum
-        Sp = np.array(list(reversed(post_cumsum))) / (num_cell - post_1_sum)
-    
-
+    FDR = post_cumsum / post_range
+    FNR = np.array(list(reversed(post_1_cumsum))) / ((num_cell - post_range) + 1e-7)
+    Se = np.cumsum((1 - posterior_probability)) / post_1_sum
+    Sp = np.array(list(reversed(post_cumsum))) / (num_cell - post_1_sum)
 
     name = DATA["product_name"]
     ae = DATA["ae_name"]
@@ -263,64 +255,28 @@ def gps(
     RES.param["convergence"] = code_convergence
 
     # SIGNALS RESULTS and presentation
-    if ranking_statistic == "p_value":
+    ranking_statistic == "quantile":
         RES.all_signals = pd.DataFrame(
-            {
-                "Product": name,
-                "Adverse Event": ae,
-                "Count": count,
-                "Expected Count": expected,
-                "p_value": RankStat,
-                "product margin": n1j,
-                "event margin": ni1,
-                "fdr": FDR,
-                "FNR": FNR,
-                "Se": Se,
-                "Sp": Sp,
-            }
-        ).sort_values(by=[ranking_statistic])
-
-    elif ranking_statistic == "quantile":
-        RES.all_signals = pd.DataFrame(
-            {
-                "Product": name,
-                "Adverse Event": ae,
-                "Count": count,
-                "Expected Count": expected,
-                "quantile": RankStat,
-                "EBGM": np.float64(2**EBlog2),
-                "LB05 FDA" : LB05,
-                "UB95 FDA" : UB95,
-                "product margin": n1j,
-                "event margin": ni1,
-                "fdr": FDR,
-                "FNR": FNR,
-                "Se": Se,
-                "Sp": Sp,
-                "posterior_probability": posterior_probability,
-            }
-        )
-        RES.all_signals = RES.all_signals.sort_values(by=[ranking_statistic], ascending=False)
-    else:
-        RES.all_signals = pd.DataFrame(
-            {
-                "Product": name,
-                "Adverse Event": ae,
-                "Count": count,
-                "Expected Count": expected,
-                "log2": RankStat,
-                "count/expected": (count / expected),
-                "product margin": n1j,
-                "event margin": ni1,
-                "fdr": FDR,
-                "FNR": FNR,
-                "Se": Se,
-                "Sp": Sp,
-                "LowerBound": LB,
-                "p_value": posterior_probability,
-            }
-        )
-        RES.all_signals = RES.all_signals.sort_values(by=[ranking_statistic], ascending=False)
+        {
+            "Product": name,
+            "Adverse Event": ae,
+            "Count": count,
+            "Expected Count": expected,
+            "quantile": RankStat,
+            "EBGM": np.float64(2**EBlog2),
+            "LB05 FDA" : LB05,
+            "UB95 FDA" : UB95,
+            "product margin": n1j,
+            "event margin": ni1,
+            "fdr": FDR,
+            "FNR": FNR,
+            "Se": Se,
+            "Sp": Sp,
+            "posterior_probability": posterior_probability,
+        }
+    )
+    RES.all_signals = RES.all_signals.sort_values(by=[ranking_statistic], ascending=False)
+    
 
     # List of Signals generated according to the method
     RES.all_signals.index = np.arange(0, len(RES.all_signals.index))
