@@ -255,17 +255,17 @@ def gps(
     RES.param["convergence"] = code_convergence
 
     # SIGNALS RESULTS and presentation
-    ranking_statistic == "quantile"
+    # ranking_statistic == "quantile"
     RES.all_signals = pd.DataFrame(
         {
             "Product": name,
             "Adverse Event": ae,
-            "Count": count,
-            "Expected Count": expected,
-            "quantile": RankStat,
+            # "Expected Count": expected,
+            # "quantile": RankStat,
             "EBGM": np.float64(2**EBlog2),
             "LB05 FDA" : LB05,
             "UB95 FDA" : UB95,
+            "Count": count,
             "product margin": n1j,
             "event margin": ni1,
             "fdr": FDR,
