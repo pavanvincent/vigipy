@@ -260,6 +260,7 @@ def gps(
     Se = np.cumsum((1 - posterior_probability)) / post_1_sum
     Sp = np.array(list(reversed(post_cumsum))) / (num_cell - post_1_sum)
 
+    RankStat = LB05
     ranking_statistic == "quantile"
     name = DATA["product_name"]
     ae = DATA["ae_name"]
@@ -276,6 +277,7 @@ def gps(
         {
             "Product": name,
             "Adverse Event": ae,
+            "quantile": RankStat
             "EBGM" : np.float64(2**EBlog2),
             "EB025": LB025,
             "EB05" : LB05,
