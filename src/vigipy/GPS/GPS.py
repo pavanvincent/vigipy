@@ -247,7 +247,7 @@ def gps(
         priors[3] + expected,
     )
     
-    ranking_statistic == "quantile":
+    ranking_statistic == "quantile"
     RankStat = LB025
 
     post_cumsum = np.cumsum(posterior_probability)
