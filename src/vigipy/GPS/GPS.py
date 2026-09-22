@@ -210,8 +210,8 @@ def gps(
     dgterm2 = dg2 - np.log(priors[3] + expected)
     EBlog2 = (np.log(2) ** -1) * (Qn * dgterm1 + (1 - Qn) * dgterm2)
 
-    # Calculation of the Lower Bound.
-    LB = quantiles(
+    # Calculation of the Lower Bound at 5% (FDA standards)
+    LB05 = quantiles(
         0.05,
         Qn,
         priors[0] + n11,
@@ -219,6 +219,37 @@ def gps(
         priors[2] + n11,
         priors[3] + expected,
     )
+
+     # Calculation of the Lower Bound at 2,5% (WHO standards)
+    LB025 = quantiles(
+        0.025,
+        Qn,
+        priors[0] + n11,
+        priors[1] + expected,
+        priors[2] + n11,
+        priors[3] + expected,
+    )
+
+    # Calculation of the Upper Bound at 95% (FDA standards)
+    UB95 = quantiles(
+        0.95,
+        Qn,
+        priors[0] + n11,
+        priors[1] + expected,
+        priors[2] + n11,
+        priors[3] + expected,
+    )
+
+     # Calculation of the Upper Bound at 97,5% (WHO standards)
+    UB975 = quantiles(
+        0.975,
+        Qn,
+        priors[0] + n11,
+        priors[1] + expected,
+        priors[2] + n11,
+        priors[3] + expected,
+    )
+
 
     # Assignment based on the method
     if ranking_statistic == "p_value":
@@ -294,6 +325,10 @@ def gps(
                 "Count": count,
                 "Expected Count": expected,
                 "EBGM" : np.float64(2**EBlog2),
+                "EB025 WHO": LB025
+                "EB05 FDA" : LB05,
+                "EB95" : UB95,
+                "EB975": UB975
                 "quantile": RankStat,
                 "count/expected": (count / expected),
                 "product margin": n1j,
