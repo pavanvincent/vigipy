@@ -119,6 +119,7 @@ def bcpnn(
         posterior_prob = []
         lower_bound = []
         upper_bound = []
+        IC = []
         relative_risk=1
         for m in range(num_cell):
             alpha = [g11[m], g10[m], g01[m], g00[m]]
@@ -130,10 +131,11 @@ def bcpnn(
             ic_monte = np.sort(ic_monte)
             temp = 1 * (ic_monte < np.log2(relative_risk))
             posterior_prob.append(sum(temp) / num_MC_int)
-            ic_final.append(ic_monte[round(num_MC_int * 0.50)])    
+            IC.append(ic_monte[round(num_MC_int * 0.50)])    
             lower_bound.append(ic_monte[round(num_MC_int * 0.025)]) 
             upper_bound.append(ic_monte[round(num_MC_int * 0.975)])
         posterior_prob = np.asarray(posterior_prob)
+        IC = np.asarray(IC)
         lower_bound = np.asarray(lower_bound)
         upper_bound = np.asarray(upper_bound)
 
