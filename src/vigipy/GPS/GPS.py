@@ -322,7 +322,7 @@ def gps(
                 "Count": count,
                 "Expected Count": expected,
                 "quantile": RankStat,
-                "EBGM": "EBGM": np.float64(2**EBlog2),
+                "EBGM": np.float64(2**EBlog2),
                 "product margin": n1j,
                 "event margin": ni1,
                 "fdr": FDR,
