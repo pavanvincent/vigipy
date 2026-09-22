@@ -247,15 +247,8 @@ def gps(
         priors[3] + expected,
     )
     
-    
-
-    # Assignment based on the method
-    if ranking_statistic == "p_value":
-        RankStat = posterior_probability
-    elif ranking_statistic == "quantile":
-        RankStat = LB025
-    elif ranking_statistic == "log2":
-        RankStat = np.array([x.evalf() for x in EBlog2])
+    ranking_statistic == "quantile":
+    RankStat = LB025
 
     post_cumsum = np.cumsum(posterior_probability)
     post_1_cumsum = np.cumsum(1 - posterior_probability)
