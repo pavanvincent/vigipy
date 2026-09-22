@@ -253,7 +253,7 @@ def gps(
     if ranking_statistic == "p_value":
         RankStat = posterior_probability
     elif ranking_statistic == "quantile":
-        RankStat = LB05
+        RankStat = LB025
     elif ranking_statistic == "log2":
         RankStat = np.array([x.evalf() for x in EBlog2])
 
@@ -336,7 +336,6 @@ def gps(
                 "posterior_probability": posterior_probability,
             }
         )
-         ranking_statistic = "LB025 WHO"
         RES.all_signals = RES.all_signals.sort_values(by=[ranking_statistic], ascending=False)
     else:
         RES.all_signals = pd.DataFrame(
