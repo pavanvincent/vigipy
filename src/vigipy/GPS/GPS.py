@@ -249,19 +249,6 @@ def gps(
         FNR = np.array(list(reversed(post_1_cumsum))) / ((num_cell - post_range) + 1e-7)
         Se = np.cumsum((1 - posterior_probability)) / post_1_sum
         Sp = np.array(list(reversed(post_cumsum))) / (num_cell - post_1_sum)
-
-    # Number of signals according to the decision rule (pp/FDR/Nb of Signals)
-    if decision_metric == "fdr":
-        num_signals = np.sum(FDR <= decision_thres)
-    elif decision_metric == "signals":
-        num_signals = min((RankStat <= decision_thres).sum(), num_cell)
-    elif decision_metric == "rank":
-        if ranking_statistic == "p_value":
-            num_signals = np.sum(RankStat <= decision_thres)
-        elif ranking_statistic == "quantile":
-            num_signals = np.sum(RankStat >= decision_thres)
-        elif ranking_statistic == "log2":
-            num_signals = np.sum(RankStat >= decision_thres)
     
 
 
@@ -337,13 +324,6 @@ def gps(
 
     # List of Signals generated according to the method
     RES.all_signals.index = np.arange(0, len(RES.all_signals.index))
-    # if num_signals > 0:
-    #    num_signals -= 1
-    # else:
-    #    num_signals = 0
-    # RES.signals = RES.all_signals.iloc[
-    #    0:num_signals,
-    # ]
 
     # Number of signal according to standar FDA: LB05 >= 2
     num_signals = np.sum(RankStat >= np.float64(2))
