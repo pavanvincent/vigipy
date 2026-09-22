@@ -233,7 +233,6 @@ def gps(
     
     ranking_statistic == "quantile"
     RankStat = LB05
-    num_signals = np.sum(RankStat >= 2)
 
     post_cumsum = np.cumsum(posterior_probability)
     post_1_cumsum = np.cumsum(1 - posterior_probability)
@@ -263,7 +262,11 @@ def gps(
             num_signals = np.sum(RankStat >= decision_thres)
         elif ranking_statistic == "log2":
             num_signals = np.sum(RankStat >= decision_thres)
-    # Number of signal according to 
+    
+    # Number of signal according to standar FDA: LB05 >= 2
+    num_signals = np.sum(RankStat >= np.float64(2))
+    RES.num_signals = num_signals
+
 
     name = DATA["product_name"]
     ae = DATA["ae_name"]
@@ -345,8 +348,7 @@ def gps(
     #    0:num_signals,
     # ]
 
-    # Number of signals
-    RES.num_signals = num_signals
+   
 
     return RES
 
