@@ -348,6 +348,7 @@ def gps(
     # Number of signal according to standar FDA: LB05 >= 2
     num_signals = np.sum(RankStat >= np.float64(2))
     RES.num_signals = num_signals
+    RES.signals = RES.all_signals.iloc[0:num_signals,]
    
 
     return RES
