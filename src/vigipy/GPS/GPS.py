@@ -290,7 +290,7 @@ def gps(
             "Sp": Sp,
             }
         )
-        RES.all_signals = RES.all_signals.sort_values(by=["EB025"], ascending=False)
+        RES.all_signals = RES.all_signals.sort_values(by=["EB025 WHO"], ascending=False)
 
 
     # List of Signals generated according to the method
