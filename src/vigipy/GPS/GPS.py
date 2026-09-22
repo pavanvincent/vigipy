@@ -293,7 +293,7 @@ def gps(
                 "Adverse Event": ae,
                 "Count": count,
                 "Expected Count": expected,
-                "EBGM" : 2**EBlog2
+                "EBGM" : 2**EBlog2,
                 "quantile": RankStat,
                 "count/expected": (count / expected),
                 "product margin": n1j,
