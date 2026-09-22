@@ -261,15 +261,60 @@ def gps(
     # Computing FDR (False Discovery Rate) FNR (False Negative Rate)
     # Computing Se (Sensitivity) Sp (specificity)
     #-----------------------------------------------------------------
-    post_cumsum = np.cumsum(posterior_probability)
-    post_1_cumsum = np.cumsum(1 - posterior_probability)
-    post_1_sum = sum(1 - posterior_probability)
-    post_range = np.arange(1, len(posterior_probability) + 1)
+    P_H0 = np.asarray(posterior_probability)  # Probabilité de l'hypothèse nulle (faux positif)
+    P_H1 = 1.0 - P_H0                         # Probabilité de l'hypothèse alternative (vrai signal)
 
-    FDR = post_cumsum / post_range
-    FNR = np.array(list(reversed(post_1_cumsum))) / ((num_cell - post_range) + 1e-7)
-    Se = np.cumsum((1 - posterior_probability)) / post_1_sum
-    Sp = np.array(list(reversed(post_cumsum))) / (num_cell - post_1_sum)
+    #-----------------------------------------
+    # Totaux absolus attendus dans la base
+    #----------------------------------------
+    total_vrais_signaux = np.sum(P_H1)
+    total_vrais_negatifs = np.sum(P_H0)
+    num_cell = len(P_H0)
+
+    #---------------------------------------------------------------
+    # Cumuls de gauche à droite (du meilleur signal au moins bon)
+    #--------------------------------------------------------------
+    signaux_trouves_cum = np.cumsum(P_H1)  # Vrais Positifs cumulés
+    faux_positifs_cum = np.cumsum(P_H0)    # Faux Positifs cumulés
+
+    #-------------------------------------------
+    # Vecteur de rang (1 à N)
+    post_range = np.arange(1, num_cell + 1)
+    #----------------------------------------------------------
+    # FDR = Faux Positifs détectés / Total des alertes levées
+    #---------------------------------------------------------
+    FDR = faux_positifs_cum / post_range
+
+    #------------------------------------------------------------------
+    # Se = Vrais Positifs détectés / Total des vrais signaux existants
+    #-------------------------------------------------------------------
+    Se = signaux_trouves_cum / (total_vrais_signaux + 1e-7)
+
+    #----------------------------------------------------------------------------------------
+    # FNR = Vrais signaux manqués (à droite du curseur) / Total des vrais signaux existants
+    # Équivalent à : 1 - Se
+    #----------------------------------------------------------------------------------------
+    vrais_signaux_manques = total_vrais_signaux - signaux_trouves_cum
+    FNR = vrais_signaux_manques / (total_vrais_signaux + 1e-7)
+
+    #-------------------------------------------------------------------------------------------
+    # Sp = Vrais Négatifs préservés (à droite du curseur) / Total des vrais négatifs existants
+    #-------------------------------------------------------------------------------------------
+    vrais_negatifs_preserves = total_vrais_negatifs - faux_positifs_cum
+    Sp = vrais_negatifs_preserves / (total_vrais_negatifs + 1e-7)
+
+
+
+    
+    # post_cumsum = np.cumsum(posterior_probability)
+    # post_1_cumsum = np.cumsum(1 - posterior_probability)
+    # post_1_sum = sum(1 - posterior_probability)
+    # post_range = np.arange(1, len(posterior_probability) + 1)
+
+    # FDR = post_cumsum / post_range
+    # FNR = np.array(list(reversed(post_1_cumsum))) / ((num_cell - post_range) + 1e-7)
+    # Se = np.cumsum((1 - posterior_probability)) / post_1_sum
+    # Sp = np.array(list(reversed(post_cumsum))) / (num_cell - post_1_sum)
 
     #-------------------------
     # return results
