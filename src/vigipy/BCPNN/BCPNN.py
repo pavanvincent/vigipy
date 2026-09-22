@@ -133,11 +133,10 @@ def bcpnn(
         {
             "Product": name,
             "Adverse Event": ae,
-            "count/expected new": 2**(IC),
+            "count/expected": 2**(IC),
             "lower_bound" : 2**(lower_bound),
             "upper_bound" : 2**(upper_bound),
             "Count": count,
-            "Expected Count": E,
             "product margin": n1j,
             "event margin": ni1,
             "fdr": FDR,
