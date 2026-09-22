@@ -34,7 +34,7 @@ def gps(
     relative_risk=1,
     min_events=1,
     decision_metric="rank",
-    decision_thres=0.05,
+    decision_thres=0.025,
     ranking_statistic="quantile",
     truncate=False,
     truncate_thres=1,
@@ -210,7 +210,7 @@ def gps(
     dgterm2 = dg2 - np.log(priors[3] + expected)
     EBlog2 = (np.log(2) ** -1) * (Qn * dgterm1 + (1 - Qn) * dgterm2)
 
-    # Calculation of the Lower Bound.
+    # Calculation of the Lower Bound at level 2.5%
     LB025 = quantiles(
         0.025,
         Qn,
@@ -219,7 +219,8 @@ def gps(
         priors[2] + n11,
         priors[3] + expected,
     )
-    
+
+    # Calculation of the Lower Bound at level 5%
     LB05 = quantiles(
         0.05,
         Qn,
@@ -229,6 +230,7 @@ def gps(
         priors[3] + expected,
     )
 
+    # Calculation of the Uopoer Bound at level 95%
     UB95 = quantiles(
         0.95,
         Qn,
@@ -237,7 +239,8 @@ def gps(
         priors[2] + n11,
         priors[3] + expected,
     )
-    
+
+    # Calculation of the Uopoer Bound at level 97.5%
     UB975 = quantiles(
         0.975,
         Qn,
@@ -248,7 +251,12 @@ def gps(
     )
     
     ranking_statistic == "quantile"
-    RankStat = LB025
+    if decisison_thres == 0.025
+        RankStat = LB025
+        num_signals = np.sum(RankStat > decision_thres)
+    elif decision_thres == 0.05
+        RankStat = LB05
+        num_signals = np.sum(RankStat >= decision_thres)
 
     post_cumsum = np.cumsum(posterior_probability)
     post_1_cumsum = np.cumsum(1 - posterior_probability)
@@ -278,6 +286,7 @@ def gps(
             num_signals = np.sum(RankStat >= decision_thres)
         elif ranking_statistic == "log2":
             num_signals = np.sum(RankStat >= decision_thres)
+    # Number of signal according to 
 
     name = DATA["product_name"]
     ae = DATA["ae_name"]
@@ -353,13 +362,13 @@ def gps(
 
     # List of Signals generated according to the method
     RES.all_signals.index = np.arange(0, len(RES.all_signals.index))
-    if num_signals > 0:
-        num_signals -= 1
-    else:
-        num_signals = 0
-    RES.signals = RES.all_signals.iloc[
-        0:num_signals,
-    ]
+    # if num_signals > 0:
+    #    num_signals -= 1
+    # else:
+    #    num_signals = 0
+    # RES.signals = RES.all_signals.iloc[
+    #    0:num_signals,
+    # ]
 
     # Number of signals
     RES.num_signals = num_signals
