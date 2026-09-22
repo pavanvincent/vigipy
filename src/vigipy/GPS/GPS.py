@@ -255,7 +255,7 @@ def gps(
     if ranking_statistic == "p_value":
         RankStat = posterior_probability
     elif ranking_statistic == "quantile":
-        RankStat = LB
+        RankStat = LB025
     elif ranking_statistic == "log2":
         RankStat = np.array([x.evalf() for x in EBlog2])
 
