@@ -145,9 +145,9 @@ def bcpnn(
             "Sp": Sp,
         }
     ).sort_values(by=["lower_bound"], ascending=False)
-    RC.signals = RC.all_signals.loc[RC.all_signals["lower_bound"] > 0]
+    RC.signals = RC.all_signals.loc[RC.all_signals["lower_bound"] > 1]
     
-    num_signals = (lower_bound > 0).sum()
+    num_signals = (lower_bound > 1).sum()
     
     if num_signals > 0:
         num_signals -= 1
