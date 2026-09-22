@@ -251,10 +251,10 @@ def gps(
     )
     
     ranking_statistic == "quantile"
-    if decisison_thres == 0.025
+    if decisison_thres == 0.025:
         RankStat = LB025
         num_signals = np.sum(RankStat > decision_thres)
-    elif decision_thres == 0.05
+    elif decision_thres == 0.05:
         RankStat = LB05
         num_signals = np.sum(RankStat >= decision_thres)
 
