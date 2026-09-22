@@ -211,7 +211,7 @@ def gps(
     EBlog2 = (np.log(2) ** -1) * (Qn * dgterm1 + (1 - Qn) * dgterm2)
 
     # Calculation of the Lower Bound.
-    LB = quantiles(
+    LB05 = quantiles(
         0.05,
         Qn,
         priors[0] + n11,
@@ -219,12 +219,13 @@ def gps(
         priors[2] + n11,
         priors[3] + expected,
     )
+    
 
     # Assignment based on the method
     if ranking_statistic == "p_value":
         RankStat = posterior_probability
     elif ranking_statistic == "quantile":
-        RankStat = LB
+        RankStat = LB05
     elif ranking_statistic == "log2":
         RankStat = np.array([x.evalf() for x in EBlog2])
 
