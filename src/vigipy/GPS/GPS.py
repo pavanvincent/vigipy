@@ -277,7 +277,7 @@ def gps(
         {
             "Product": name,
             "Adverse Event": ae,
-            "quantile": RankStat
+            "quantile": RankStat,
             "EBGM" : np.float64(2**EBlog2),
             "EB025": LB025,
             "EB05" : LB05,
