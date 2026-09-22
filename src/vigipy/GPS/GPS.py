@@ -210,16 +210,6 @@ def gps(
     dgterm2 = dg2 - np.log(priors[3] + expected)
     EBlog2 = (np.log(2) ** -1) * (Qn * dgterm1 + (1 - Qn) * dgterm2)
 
-    # Calculation of the Lower Bound at level 2.5%
-    LB025 = quantiles(
-        0.025,
-        Qn,
-        priors[0] + n11,
-        priors[1] + expected,
-        priors[2] + n11,
-        priors[3] + expected,
-    )
-
     # Calculation of the Lower Bound at level 5%
     LB05 = quantiles(
         0.05,
@@ -240,23 +230,10 @@ def gps(
         priors[3] + expected,
     )
 
-    # Calculation of the Uopoer Bound at level 97.5%
-    UB975 = quantiles(
-        0.975,
-        Qn,
-        priors[0] + n11,
-        priors[1] + expected,
-        priors[2] + n11,
-        priors[3] + expected,
-    )
     
     ranking_statistic == "quantile"
-    if decision_thres == 0.025:
-        RankStat = LB025
-        num_signals = np.sum(RankStat > decision_thres)
-    elif decision_thres == 0.05:
-        RankStat = LB05
-        num_signals = np.sum(RankStat >= decision_thres)
+    RankStat = LB05
+    num_signals = np.sum(RankStat >= 2)
 
     post_cumsum = np.cumsum(posterior_probability)
     post_1_cumsum = np.cumsum(1 - posterior_probability)
@@ -325,10 +302,8 @@ def gps(
                 "Expected Count": expected,
                 "quantile": RankStat,
                 "EBGM": np.float64(2**EBlog2),
-                "LB025 WHO" : LB025,
                 "LB05 FDA" : LB05,
                 "UB95 FDA" : UB95,
-                "UB975 WHO" : UB975,
                 "product margin": n1j,
                 "event margin": ni1,
                 "fdr": FDR,
