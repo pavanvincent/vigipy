@@ -260,7 +260,7 @@ def gps(
     Se = np.cumsum((1 - posterior_probability)) / post_1_sum
     Sp = np.array(list(reversed(post_cumsum))) / (num_cell - post_1_sum)
 
-
+    ranking_statistic == "quantile"
     name = DATA["product_name"]
     ae = DATA["ae_name"]
     count = n11
@@ -290,7 +290,7 @@ def gps(
             "Sp": Sp,
             }
         )
-        RES.all_signals = RES.all_signals.sort_values(by=[EB025], ascending=False)
+        RES.all_signals = RES.all_signals.sort_values(by=[ranking_statistic], ascending=False)
 
 
     # List of Signals generated according to the method
