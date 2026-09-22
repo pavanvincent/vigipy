@@ -263,9 +263,6 @@ def gps(
         elif ranking_statistic == "log2":
             num_signals = np.sum(RankStat >= decision_thres)
     
-    # Number of signal according to standar FDA: LB05 >= 2
-    num_signals = np.sum(RankStat >= np.float64(2))
-    RES.num_signals = num_signals
 
 
     name = DATA["product_name"]
@@ -348,6 +345,9 @@ def gps(
     #    0:num_signals,
     # ]
 
+    # Number of signal according to standar FDA: LB05 >= 2
+    num_signals = np.sum(RankStat >= np.float64(2))
+    RES.num_signals = num_signals
    
 
     return RES
