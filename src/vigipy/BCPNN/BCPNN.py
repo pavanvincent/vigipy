@@ -12,9 +12,6 @@ trigamma = np.vectorize(gamma_functions.trigamma)
 def bcpnn(
     container,
     min_events=1,
-    decision_metric="rank",
-    decision_thres=0.05,
-    ranking_statistic="quantile",
     MC=False,
     num_MC=10000,
     expected_method="mantel-haentzel",
@@ -30,26 +27,9 @@ def bcpnn(
 
         min_events: The min number of AE reports to be considered a signal
 
-        decision_metric (str): The metric used for detecting signals:
-                            {fdr = false detection rate,
-                            signals = number of signals,
-                            rank = ranking statistic}
-
-        decision_thres (float): The min thres value for the decision_metric
-
-        ranking_statistic (str): How to rank signals:
-                            {'p_value' = posterior prob of the null hypothesis,
-                            'quantile' = 2.5% quantile of the IC}
-
         MC (Bool): Use Monte Carlo simulations to make results more robust?
 
         num_mc (int): Number of MC simulations to run
-
-        expected_method: The method of calculating the expected counts for
-                        the disproportionality analysis.
-
-        method_alpha: If the expected_method is negative-binomial, this
-                    parameter is the alpha parameter of the distribution.
 
     """
     input_params = locals()
@@ -139,31 +119,11 @@ def bcpnn(
         lower_bound = np.asarray(lower_bound)
         upper_bound = np.asarray(upper_bound)
 
-    if ranking_statistic == "p_value":
-        RankStat = posterior_prob
-    else:
-        RankStat = lower_bound
 
-    if ranking_statistic == "p_value":
-        FDR = np.cumsum(posterior_prob) / np.arange(1, len(posterior_prob) + 1)
-        FNR = (np.cumsum(1 - posterior_prob)[::-1]) / (num_cell - np.arange(1, len(posterior_prob) + 1) + 1e-7)
-        Se = np.cumsum(1 - posterior_prob) / (sum(1 - posterior_prob))
-        Sp = (np.cumsum(posterior_prob)[::-1]) / (num_cell - sum(1 - posterior_prob))
-    else:
-        FDR = np.cumsum(posterior_prob) / np.arange(1, len(posterior_prob) + 1)
-        FNR = (np.cumsum(1 - posterior_prob)[::-1]) / (num_cell - np.arange(1, len(posterior_prob) + 1) + 1e-7)
-        Se = np.cumsum((1 - posterior_prob)) / (sum(1 - posterior_prob))
-        Sp = (np.cumsum(posterior_prob)[::-1]) / (num_cell - sum(1 - posterior_prob))
-
-    if decision_metric == "fdr":
-        num_signals = (FDR <= decision_thres).sum()
-    elif decision_metric == "signals":
-        num_signals = min((RankStat <= decision_thres).sum(), num_cell)
-    elif decision_metric == "rank":
-        if ranking_statistic == "p_value":
-            num_signals = (RankStat <= decision_thres).sum()
-        elif ranking_statistic == "quantile":
-            num_signals = (RankStat >= decision_thres).sum()
+    FDR = np.cumsum(posterior_prob) / np.arange(1, len(posterior_prob) + 1)
+    FNR = (np.cumsum(1 - posterior_prob)[::-1]) / (num_cell - np.arange(1, len(posterior_prob) + 1) + 1e-7)
+    Se = np.cumsum((1 - posterior_prob)) / (sum(1 - posterior_prob))
+    Sp = (np.cumsum(posterior_prob)[::-1]) / (num_cell - sum(1 - posterior_prob))
 
     name = DATA["product_name"]
     ae = DATA["ae_name"]
@@ -177,8 +137,6 @@ def bcpnn(
         {
             "Product": name,
             "Adverse Event": ae,
-            "quantile": RankStat,
-            "count/expected old": (count / E),
             "count/expected new": 2**(IC),
             "lower_bound" : 2**(lower_bound),
             "upper_bound" : 2**(upper_bound),
@@ -191,8 +149,8 @@ def bcpnn(
             "Se": Se,
             "Sp": Sp,
         }
-    ).sort_values(by=[ranking_statistic], ascending=False)
-    RC.signals = RC.all_signals.loc[RC.all_signals[ranking_statistic] > 0]
+    ).sort_values(by=["lower_bound"], ascending=False)
+    RC.signals = RC.all_signals.loc[RC.all_signals["lower_bound"] > 0]
 
     
     if num_signals > 0:
