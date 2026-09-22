@@ -303,19 +303,6 @@ def gps(
     vrais_negatifs_preserves = total_vrais_negatifs - faux_positifs_cum
     Sp = vrais_negatifs_preserves / (total_vrais_negatifs + 1e-7)
 
-
-
-    
-    # post_cumsum = np.cumsum(posterior_probability)
-    # post_1_cumsum = np.cumsum(1 - posterior_probability)
-    # post_1_sum = sum(1 - posterior_probability)
-    # post_range = np.arange(1, len(posterior_probability) + 1)
-
-    # FDR = post_cumsum / post_range
-    # FNR = np.array(list(reversed(post_1_cumsum))) / ((num_cell - post_range) + 1e-7)
-    # Se = np.cumsum((1 - posterior_probability)) / post_1_sum
-    # Sp = np.array(list(reversed(post_cumsum))) / (num_cell - post_1_sum)
-
     #-------------------------
     # return results
     #------------------------
@@ -342,7 +329,7 @@ def gps(
             "N_{11}": n11,
             "product margin": n1j,
             "event margin": ni1,
-            "fdr": FDR,
+            "FDR": FDR,
             "FNR": FNR,
             "Se": Se,
             "Sp": Sp, 
