@@ -211,6 +211,15 @@ def gps(
     EBlog2 = (np.log(2) ** -1) * (Qn * dgterm1 + (1 - Qn) * dgterm2)
 
     # Calculation of the Lower Bound.
+    LB025 = quantiles(
+        0.025,
+        Qn,
+        priors[0] + n11,
+        priors[1] + expected,
+        priors[2] + n11,
+        priors[3] + expected,
+    )
+    
     LB05 = quantiles(
         0.05,
         Qn,
@@ -219,6 +228,25 @@ def gps(
         priors[2] + n11,
         priors[3] + expected,
     )
+
+    UB95 = quantiles(
+        0.95,
+        Qn,
+        priors[0] + n11,
+        priors[1] + expected,
+        priors[2] + n11,
+        priors[3] + expected,
+    )
+    
+    UB975 = quantiles(
+        0.975,
+        Qn,
+        priors[0] + n11,
+        priors[1] + expected,
+        priors[2] + n11,
+        priors[3] + expected,
+    )
+    
     
 
     # Assignment based on the method
@@ -277,7 +305,6 @@ def gps(
                 "Count": count,
                 "Expected Count": expected,
                 "p_value": RankStat,
-                "count/expected": (count / expected),
                 "product margin": n1j,
                 "event margin": ni1,
                 "fdr": FDR,
@@ -295,7 +322,7 @@ def gps(
                 "Count": count,
                 "Expected Count": expected,
                 "quantile": RankStat,
-                "count/expected": (count / expected),
+                "EBGM": "EBGM": np.float64(2**EBlog2),
                 "product margin": n1j,
                 "event margin": ni1,
                 "fdr": FDR,
