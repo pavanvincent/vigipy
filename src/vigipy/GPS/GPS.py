@@ -255,8 +255,8 @@ def gps(
     RES.param["convergence"] = code_convergence
 
     # SIGNALS RESULTS and presentation
-    ranking_statistic == "quantile":
-        RES.all_signals = pd.DataFrame(
+    ranking_statistic == "quantile"
+    RES.all_signals = pd.DataFrame(
         {
             "Product": name,
             "Adverse Event": ae,
