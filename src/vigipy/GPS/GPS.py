@@ -231,8 +231,8 @@ def gps(
     )
 
     
-    ranking_statistic == "quantile"
-    RankStat = LB05
+    # ranking_statistic == "quantile"
+    # RankStat = LB05
 
     post_cumsum = np.cumsum(posterior_probability)
     post_1_cumsum = np.cumsum(1 - posterior_probability)
@@ -260,12 +260,10 @@ def gps(
         {
             "Product": name,
             "Adverse Event": ae,
-            # "Expected Count": expected,
-            # "quantile": RankStat,
             "EBGM": np.float64(2**EBlog2),
             "LB05 FDA" : LB05,
             "UB95 FDA" : UB95,
-            "Count": count,
+            "N_{11}": count,
             "product margin": n1j,
             "event margin": ni1,
             "fdr": FDR,
