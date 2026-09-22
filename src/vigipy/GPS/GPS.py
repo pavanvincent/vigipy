@@ -261,8 +261,6 @@ def gps(
     Sp = np.array(list(reversed(post_cumsum))) / (num_cell - post_1_sum)
 
 
-    ranking_statistic == "quantile":
-    RankStat = LB025
     name = DATA["product_name"]
     ae = DATA["ae_name"]
     count = n11
