@@ -336,6 +336,7 @@ def gps(
                 "posterior_probability": posterior_probability,
             }
         )
+         ranking_statistic = "LB025 WHO"
         RES.all_signals = RES.all_signals.sort_values(by=[ranking_statistic], ascending=False)
     else:
         RES.all_signals = pd.DataFrame(
