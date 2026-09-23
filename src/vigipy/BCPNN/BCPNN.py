@@ -147,11 +147,6 @@ def bcpnn(
     vrais_negatifs_preserves = total_vrais_negatifs - faux_positifs_cum
     Sp = vrais_negatifs_preserves / (total_vrais_negatifs + 1e-7)
 
-    # FDR = np.cumsum(posterior_prob) / np.arange(1, len(posterior_prob) + 1)
-    # FNR = (np.cumsum(1 - posterior_prob)[::-1]) / (num_cell - np.arange(1, len(posterior_prob) + 1) + 1e-7)
-    # Se = np.cumsum((1 - posterior_prob)) / (sum(1 - posterior_prob))
-    # Sp = (np.cumsum(posterior_prob)[::-1]) / (num_cell - sum(1 - posterior_prob))
-
     name = DATA["product_name"]
     ae = DATA["ae_name"]
     count = n11
