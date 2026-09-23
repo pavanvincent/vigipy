@@ -144,13 +144,19 @@ def bcpnn(
     
     # Sensitivity (Se): proportion of captured true signals out of the total available
     #----------------------------------------------------------------------------------
-    sensitivity = true_positives_cum / (total_true_signals + 1e-7)
+    Se = true_positives_cum / (total_true_signals + 1e-7)
     
     # FNR: proportion of missed true signals (those remaining to the right of the threshold)
-    # Strictly equivalent to: FNR = 1.0 - Sensitivity
+    # Strictly equivalent to: FNR = 1.0 - Se
     #----------------------------------------------------------------------------------------
     missed_true_signals = total_true_signals - true_positives_cum
     FNR = missed_true_signals / (total_true_signals + 1e-7)
+
+    # Specificity (Sp): proportion of correctly identified true negatives
+    # Those are the true negatives that were NOT raised as alerts (remaining to the right)
+    #---------------------------------------------------------------------------------------
+    true_negatives_remaining = total_true_negatives - false_positives_cum
+    Sp = true_negatives_remaining / (total_true_negatives + 1e-7)
 
     #---------------------------------------
     # Results
