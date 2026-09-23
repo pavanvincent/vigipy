@@ -264,14 +264,13 @@ def gps(
     
     # 1. Compute Null (H0) and Alternative (H1) hypothesis probability
     #----------------------------------------------------------------
-    p_h0 = np.asarray(posterior_prob)  # posterior_prob represents P(H0), the null hypothesis probability
-    p_h1 = 1.0 - p_h0                  # Alternative hypothesis probability (true signal)
+    p_h0 = np.asarray(posterior_probability)  # posterior_probability represents P(H0), the null hypothesis probability
+    p_h1 = 1.0 - p_h0                         # Alternative hypothesis probability (true signal)
     
     # 2. Compute total expected masses in the baseline
     #-------------------------------------------------
     total_true_signals = np.sum(p_h1)
     total_true_negatives = np.sum(p_h0)
-    num_cells = len(p_h0)
     
     # 3. Cumulative sums from left to right (from highest to lowest signal)
     #-----------------------------------------------------------------------
