@@ -112,23 +112,14 @@ def gps(
     input_params = locals()
     del input_params["container"]
 
-    prior_init={
-        "alpha1": 0.2041,
-        "beta1": 0.05816,
-        "alpha2": 1.415,
-        "beta2": 1.838,
-        "w": 0.0969,
-    },
+    alpha1 = 0.2041,
+    beta1 = 0.05816,
+    alpha2 = 1.415,
+    beta2 = 1.838,
+    w = 0.0969,
 
-    priors = np.asarray(
-        [
-            prior_init["alpha1"],
-            prior_init["beta1"],
-            prior_init["alpha2"],
-            prior_init["beta2"],
-            prior_init["w"],
-        ]
-    )
+    priors = np.asarray([alpha1, beta1, alpha2, beta2,w])
+       
     DATA = container.data
     N = container.N
 
