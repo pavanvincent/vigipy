@@ -257,51 +257,48 @@ def gps(
         priors[3] + expected,
     )
    
-    #-----------------------------------------------------------------
-    # Computing FDR (False Discovery Rate) FNR (False Negative Rate)
-    # Computing Se (Sensitivity) Sp (specificity)
-    #-----------------------------------------------------------------
-    P_H0 = np.asarray(posterior_probability)  # Probabilité de l'hypothèse nulle (faux positif)
-    P_H1 = 1.0 - P_H0                         # Probabilité de l'hypothèse alternative (vrai signal)
-
-    #-----------------------------------------
-    # Totaux absolus attendus dans la base
-    #----------------------------------------
-    total_vrais_signaux = np.sum(P_H1)
-    total_vrais_negatifs = np.sum(P_H0)
-    num_cell = len(P_H0)
-
-    #---------------------------------------------------------------
-    # Cumuls de gauche à droite (du meilleur signal au moins bon)
+    #----------------------------------------------------------------
+    # Compute FDR (False Detection Rate), FNR (False Negative Rate)
+    # Compte Se (sensitivity) and Sp (specificity)
+    #----------------------------------------------------------------
+    
+    # 1. Compute Null (H0) and Alternative (H1) hypothesis probability
+    #----------------------------------------------------------------
+    p_h0 = np.asarray(posterior_prob)  # posterior_prob represents P(H0), the null hypothesis probability
+    p_h1 = 1.0 - p_h0                  # Alternative hypothesis probability (true signal)
+    
+    # 2. Compute total expected masses in the baseline
+    #-------------------------------------------------
+    total_true_signals = np.sum(p_h1)
+    total_true_negatives = np.sum(p_h0)
+    num_cells = len(p_h0)
+    
+    # 3. Cumulative sums from left to right (from highest to lowest signal)
+    #-----------------------------------------------------------------------
+    true_positives_cum = np.cumsum(p_h1)
+    false_positives_cum = np.cumsum(p_h0)
+    post_range = np.arange(1, num_cells + 1)
+    
+    
+    # FDR: proportion of false positives among the k raised alerts
     #--------------------------------------------------------------
-    signaux_trouves_cum = np.cumsum(P_H1)  # Vrais Positifs cumulés
-    faux_positifs_cum = np.cumsum(P_H0)    # Faux Positifs cumulés
-
-    #-------------------------------------------
-    # Vecteur de rang (1 à N)
-    post_range = np.arange(1, num_cell + 1)
-    #----------------------------------------------------------
-    # FDR = Faux Positifs détectés / Total des alertes levées
-    #---------------------------------------------------------
-    FDR = faux_positifs_cum / post_range
-
-    #------------------------------------------------------------------
-    # Se = Vrais Positifs détectés / Total des vrais signaux existants
-    #-------------------------------------------------------------------
-    Se = signaux_trouves_cum / (total_vrais_signaux + 1e-7)
-
+    FDR = false_positives_cum / post_range
+    
+    # Sensitivity (Se): proportion of captured true signals out of the total available
+    #----------------------------------------------------------------------------------
+    Se = true_positives_cum / (total_true_signals + 1e-7)
+    
+    # FNR: proportion of missed true signals (those remaining to the right of the threshold)
+    # Strictly equivalent to: FNR = 1.0 - Se
     #----------------------------------------------------------------------------------------
-    # FNR = Vrais signaux manqués (à droite du curseur) / Total des vrais signaux existants
-    # Équivalent à : 1 - Se
-    #----------------------------------------------------------------------------------------
-    vrais_signaux_manques = total_vrais_signaux - signaux_trouves_cum
-    FNR = vrais_signaux_manques / (total_vrais_signaux + 1e-7)
+    missed_true_signals = total_true_signals - true_positives_cum
+    FNR = missed_true_signals / (total_true_signals + 1e-7)
 
-    #-------------------------------------------------------------------------------------------
-    # Sp = Vrais Négatifs préservés (à droite du curseur) / Total des vrais négatifs existants
-    #-------------------------------------------------------------------------------------------
-    vrais_negatifs_preserves = total_vrais_negatifs - faux_positifs_cum
-    Sp = vrais_negatifs_preserves / (total_vrais_negatifs + 1e-7)
+    # Specificity (Sp): proportion of correctly identified true negatives
+    # Those are the true negatives that were NOT raised as alerts (remaining to the right)
+    #---------------------------------------------------------------------------------------
+    true_negatives_remaining = total_true_negatives - false_positives_cum
+    Sp = true_negatives_remaining / (total_true_negatives + 1e-7)
 
     #-------------------------
     # return results
@@ -325,7 +322,7 @@ def gps(
             "EBGM": np.float64(2**EBlog2),
             "LB05 FDA" : LB05,
             "UB95 FDA" : UB95,
-            "p_{H0}": posterior_probability,
+            "p_{H0}": p_h0,
             "N_{11}": n11,
             "product margin": n1j,
             "event margin": ni1,
