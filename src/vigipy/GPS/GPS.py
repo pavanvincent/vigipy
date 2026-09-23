@@ -187,16 +187,15 @@ def gps(
             bounds=minimization_bounds,
             **minimization_options,
         )
-
-    #--------------------------------------------------------------------------------
-    # get prior parameters alpha_1, beta_1, alpha_2, beta_2, w in "priors" variable
-    #--------------------------------------------------------------------------------
-    priors = p_out.x
-    if np.any(priors < 0) or priors[4] > 1:
-        warnings.warn(
-            f"Calculated priors violate distribution constraints. Alpha and Beta parameters should be >0 and mixture weight should be >=0 and <=1. Current priors: {priors}. Numerical instability likely during processing. Considering using a minimization method that supports bounds."
-        )
-    code_convergence = p_out.message
+        #--------------------------------------------------------------------------------
+        # get prior parameters alpha_1, beta_1, alpha_2, beta_2, w in "priors" variable
+        #--------------------------------------------------------------------------------
+        priors = p_out.x
+        if np.any(priors < 0) or priors[4] > 1:
+            warnings.warn(
+                f"Calculated priors violate distribution constraints. Alpha and Beta parameters should be >0 and mixture weight should be >=0 and <=1. Current priors: {priors}. Numerical instability likely during processing. Considering using a minimization method that supports bounds."
+            )
+        code_convergence = p_out.message
 
     #--------------------------------------------------------
     # exclude product / ae pairs with low numbers of events
