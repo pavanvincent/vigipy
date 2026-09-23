@@ -164,7 +164,7 @@ def bcpnn(
         {
             "Product": name,
             "Adverse Event": ae,
-            "count/expected": 2**(IC),
+            "2**IC": 2**(IC),
             "lower_bound" : 2**(lower_bound),
             "upper_bound" : 2**(upper_bound),
             "p_{H0}" : p_h0,
