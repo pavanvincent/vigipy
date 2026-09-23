@@ -38,6 +38,13 @@ def gps(
     ranking_statistic="quantile",
     truncate=False,
     truncate_thres=1,
+     prior_init={
+        "alpha1": 0.2041,
+        "beta1": 0.05816,
+        "alpha2": 1.415,
+        "beta2": 1.838,
+        "w": 0.0969,
+    },
     prior_param=None,
     expected_method="mantel-haentzel",
     method_alpha=1,
@@ -102,13 +109,7 @@ def gps(
     - The optimization process is used to estimate the prior parameters unless provided manually.
     - The function can handle truncation for numerical stability when dealing with sparse data.
     """
-     prior_init={
-        "alpha1": 0.2041,
-        "beta1": 0.05816,
-        "alpha2": 1.415,
-        "beta2": 1.838,
-        "w": 0.0969,
-    }
+   
 
     input_params = locals()
     del input_params["container"]
