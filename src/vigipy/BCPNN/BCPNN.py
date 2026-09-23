@@ -115,11 +115,42 @@ def bcpnn(
         lower_bound = np.asarray(lower_bound)
         upper_bound = np.asarray(upper_bound)
 
+    # 1. On s'assure d'avoir des objets NumPy propres
+    # posterior_prob est ici P(H0), la probabilité de l'hypothèse nulle
+    p_h0 = np.asarray(posterior_prob)  
+    p_h1 = 1.0 - p_h0                  # Probabilité de l'hypothèse alternative (vrai signal)
+    
+    # 2. Calcul des masses totales attendues dans la base
+    total_vrais_signaux = np.sum(p_h1)
+    total_vrais_negatifs = np.sum(p_h0)
+    num_cell = len(p_h0)
+    
+    # 3. Cumuls de gauche à droite (du meilleur signal au moins bon)
+    vrais_positifs_cum = np.cumsum(p_h1)
+    faux_positifs_cum = np.cumsum(p_h0)
+    post_range = np.arange(1, num_cell + 1)
+    
+    # --- FORMULES CORRIGÉES ---
+    
+    # FDR : proportion de faux positifs parmi les k alertes levées
+    FDR = faux_positifs_cum / post_range
+    
+    # Se : proportion de vrais signaux capturés parmi le total disponible
+    Se = vrais_positifs_cum / (total_vrais_signaux + 1e-7)
+    
+    # FNR : proportion de vrais signaux manqués (ceux restants à droite du curseur)
+    # Équivalent strict à : FNR = 1.0 - Se
+    vrais_signaux_manques = total_vrais_signaux - vrais_positifs_cum
+    FNR = vrais_signaux_manques / (total_vrais_signaux + 1e-7)
+    
+    # Sp : proportion de vrais négatifs préservés (ceux restants à droite du curseur)
+    vrais_negatifs_preserves = total_vrais_negatifs - faux_positifs_cum
+    Sp = vrais_negatifs_preserves / (total_vrais_negatifs + 1e-7)
 
-    FDR = np.cumsum(posterior_prob) / np.arange(1, len(posterior_prob) + 1)
-    FNR = (np.cumsum(1 - posterior_prob)[::-1]) / (num_cell - np.arange(1, len(posterior_prob) + 1) + 1e-7)
-    Se = np.cumsum((1 - posterior_prob)) / (sum(1 - posterior_prob))
-    Sp = (np.cumsum(posterior_prob)[::-1]) / (num_cell - sum(1 - posterior_prob))
+    # FDR = np.cumsum(posterior_prob) / np.arange(1, len(posterior_prob) + 1)
+    # FNR = (np.cumsum(1 - posterior_prob)[::-1]) / (num_cell - np.arange(1, len(posterior_prob) + 1) + 1e-7)
+    # Se = np.cumsum((1 - posterior_prob)) / (sum(1 - posterior_prob))
+    # Sp = (np.cumsum(posterior_prob)[::-1]) / (num_cell - sum(1 - posterior_prob))
 
     name = DATA["product_name"]
     ae = DATA["ae_name"]
