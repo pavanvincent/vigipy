@@ -112,8 +112,7 @@ def gps(
     alpha2 = 0.5*(EPS + 20)
     beta2 = 0.5*(EPS +10)
     w = 0.5*(0 + 1)
-    # input_params["prior_init"] = [0.2041, 0.05816, 1.415, 1.838, 0.0969]
-    # priors = np.asarray([0.2041, 0.05816, 1.415, 1.838, 0.0969])
+    input_params["prior_init"] = [alpha1, beta1, alpha2, beta2, w]
     priors = np.asarray([alpha1, beta1, alpha2, beta2, w])
     DATA = container.data
     N = container.N
@@ -301,7 +300,6 @@ def gps(
     RES = Container(params=True)
     # list of the parameters used
     RES.param["input_params"] = input_params
-    # RES.param["prior_init"] = prior_init
     RES.param["prior_param"] = priors
     RES.param["convergence"] = code_convergence
 
