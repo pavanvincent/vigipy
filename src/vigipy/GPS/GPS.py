@@ -313,7 +313,7 @@ def gps(
     RES = Container(params=True)
     # list of the parameters used
     RES.param["input_params"] = input_params
-    RES.param["prior_init"] = prior_init
+    # RES.param["prior_init"] = prior_init
     RES.param["prior_param"] = priors
     RES.param["convergence"] = code_convergence
 
