@@ -43,35 +43,9 @@ def gps(
     container : object
         A container object holding the input data, including event counts (`events`),
         product-event pairs (`product_aes`), and across-brand counts (`count_across_brands`).
-    relative_risk : float, optional (default=1)
-        The threshold for relative risk used in the posterior probability calculations.
     min_events : int, optional (default=1)
         The minimum number of events required for an adverse event to be considered in the analysis.
-    decision_metric : str, optional (default="rank")
-        The decision rule for signal detection. Options are 'rank', 'fdr', or 'signals'.
-    decision_thres : float, optional (default=0.05)
-        The threshold used in the decision rule to filter significant signals.
-    ranking_statistic : str, optional (default="log2")
-        The ranking statistic used to order the results. Options include 'log2', 'p_value', or 'quantile'.
     truncate : bool, optional (default=False)
-        Whether to truncate likelihoods below a certain threshold for stability in signal detection.
-    truncate_thres : float, optional (default=1)
-        The truncation threshold for likelihood values if `truncate` is set to True.
-    prior_init : dict, optional
-        Initial values for the prior distributions used in Bayesian inference. Contains parameters for two Poisson
-        distributions (alpha1, beta1, alpha2, beta2) and the mixture weight (w).
-    prior_param : array, optional (default=None)
-        Manually provided prior distribution parameters. If None, the function estimates priors using optimization.
-    expected_method : str, optional (default="mantel-haentzel")
-        The method used to calculate the expected event counts. Options include "mantel-haentzel", "negative-binomial" and "poisson".
-    method_alpha : float, optional (default=1)
-        Dispersion parameter used in the expected value calculation method.
-    minimization_method : str, optional (default="SLSQP")
-        The optimization method used for estimating prior parameters if `prior_param` is None.
-    minimization_bounds : tuple, optional
-        Bounds on the prior parameter values for the optimization process.
-    minimization_options : dict, optional
-        Options for the minimization routine.
 
     Returns:
     --------
@@ -80,18 +54,18 @@ def gps(
         - `param`: A dictionary of input parameters, including prior initialization and optimization results.
         - `all_signals`: A DataFrame containing detailed results of signal detection, including posterior probabilities,
           expected counts, and ranking statistics.
-        - `signals`: A DataFrame of filtered signals according to the decision metric and threshold.
+        - `signals`: A DataFrame of filtered signals according to the decision metric and threshold. Here this is EB05 >= 2 (FDA decision metric)
         - `num_signals`: The number of signals detected based on the decision rule.
 
     Notes:
     ------
     - This function implements a Bayesian model to calculate posterior probabilities using a mixture of two negative
       binomial distributions.
-    - The function can apply different ranking statistics to order results, such as p-value, quantile, or log2.
     - The optimization process is used to estimate the prior parameters unless provided manually.
     - The function can handle truncation for numerical stability when dealing with sparse data.
     """
-   
+
+    
     
     input_params = locals()
     del input_params["container"]
@@ -142,7 +116,6 @@ def gps(
     # 1) either non truncated likelihood (imput argument truncated = False)
     # 2) either truncated objective likelihood (imput argument truncated = true
     #-----------------------------------------------------------------------------------------
-    # if prior_param is None:
     p_out = False
     if minimization_method not in BOUNDED_METHODS:
         minimization_bounds = None
