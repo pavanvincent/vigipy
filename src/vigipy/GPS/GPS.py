@@ -38,13 +38,6 @@ def gps(
     ranking_statistic="quantile",
     truncate=False,
     truncate_thres=1,
-    # prior_init={
-    #    "alpha1": 0.2041,
-    #    "beta1": 0.05816,
-    #    "alpha2": 1.415,
-    #    "beta2": 1.838,
-    #    "w": 0.0969,
-    #},
     prior_param=None,
     expected_method="mantel-haentzel",
     method_alpha=1,
@@ -114,19 +107,14 @@ def gps(
     input_params = locals()
     del input_params["container"]
 
-    # priors = np.asarray(
-    #    [
-    #        prior_init["alpha1"],
-    #        prior_init["beta1"],
-    #        prior_init["alpha2"],
-    #        prior_init["beta2"],
-    #        prior_init["w"],
-    #    ]
-    #)
-    
-    input_params["prior_init"] = [0.2041, 0.05816, 1.415, 1.838, 0.0969]
-    priors = np.asarray([0.2041, 0.05816, 1.415, 1.838, 0.0969])
-       
+    alpha1 = 0.5*(EPS + 20) 
+    beta1 = 0.5* (EPS + 10)
+    alpha2 = 0.5*(EPS, + 20)
+    beta2 = 0.5*(EPS +10)
+    w = 0.5*(0 + 1)
+    # input_params["prior_init"] = [0.2041, 0.05816, 1.415, 1.838, 0.0969]
+    # priors = np.asarray([0.2041, 0.05816, 1.415, 1.838, 0.0969])
+    priors = np.asarray([alpha1, beta1, alpha2, beta2, w])
     DATA = container.data
     N = container.N
 
