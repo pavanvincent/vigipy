@@ -33,17 +33,7 @@ def gps(
     container,
     # relative_risk=1,
     min_events=1,
-    # decision_metric="rank",
-    # decision_thres=0.05,
-    # ranking_statistic="quantile",
     truncate=False,
-    # truncate_thres=1,
-    # prior_param=None,
-    # expected_method="mantel-haentzel",
-    # method_alpha=1,
-    # minimization_method="SLSQP",
-    # minimization_bounds=((EPS, 20), (EPS, 10), (EPS, 20), (EPS, 10), (0, 1)),
-    # minimization_options=None,
 ):
     """
     Computes signal detection based on Multi-item enabled Gamma Poisson Shrinkage (GPS) using prior distributions
