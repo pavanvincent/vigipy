@@ -114,7 +114,6 @@ def gps(
     w = np.float64(0.5*(0 + 1))
     priors = np.asarray([alpha1, beta1, alpha2, beta2, w])
     input_params["prior_init"] = priors
-    priors = np.asarray([alpha1, beta1, alpha2, beta2, w])
     DATA = container.data
     N = container.N
 
