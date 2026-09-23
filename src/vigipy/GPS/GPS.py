@@ -98,8 +98,6 @@ def gps(
     del input_params["container"]
 
     relative_risk=1,
-    decision_metric="rank"
-    decision_thres=0.05
     truncate_thres=1
     prior_param=None
     expected_method="mantel-haentzel"
@@ -108,15 +106,20 @@ def gps(
     minimization_bounds=((EPS, 20), (EPS, 10), (EPS, 20), (EPS, 10), (0, 1))
     minimization_options=None
 
-    
-
     alpha1 =0.5*(EPS + 20) 
     beta1 =0.5* (EPS + 10)
     alpha2 = 0.5*(EPS + 20)
     beta2 = 0.5*(EPS +10)
     w = 0.5*(0 + 1)
     priors = np.asarray([alpha1, beta1, alpha2, beta2, w])
-    input_params["prior_init"] = priors
+    
+    computation_params["minimization_method"] = minimization_method
+    computation_params["minimization_bounds"] = minimization_bounds
+    computation_params["priori_init"] = priors
+    computation_params["method_alpha"] = method_alpha
+    computation_params["expected_method"] = expected_method
+    computation_params["minimization_options"] = minimization_options
+
     DATA = container.data
     N = container.N
 
@@ -303,7 +306,7 @@ def gps(
     RES = Container(params=True)
     # list of the parameters used
     RES.param["input_params"] = input_params
-    RES.param["prior_param"] = priors
+    RES.param["computation_params"] = computation_params
     RES.param["convergence"] = code_convergence
 
     #--------------------------------------
