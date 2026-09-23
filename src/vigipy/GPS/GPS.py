@@ -31,7 +31,6 @@ BOUNDED_METHODS = {
 
 def gps(
     container,
-    # relative_risk=1,
     min_events=1,
     truncate=False,
 ):
@@ -112,13 +111,15 @@ def gps(
     beta2 = 0.5*(EPS +10)
     w = 0.5*(0 + 1)
     priors = np.asarray([alpha1, beta1, alpha2, beta2, w])
-    
-    computation_params["minimization_method"] = minimization_method
-    computation_params["minimization_bounds"] = minimization_bounds
-    computation_params["priori_init"] = priors
-    computation_params["method_alpha"] = method_alpha
-    computation_params["expected_method"] = expected_method
-    computation_params["minimization_options"] = minimization_options
+
+    computation_params = pd.DataFrame.from_dict({
+        "minimization_method": minimization_method,
+        "minimization_bounds": minimization_bounds,
+        "priori_init": priors,
+        "method_alpha": method_alpha,
+        "expected_method": expected_method,
+        "minimization_options": minimization_options
+        }, orient="index", columns=["Value"])
 
     DATA = container.data
     N = container.N
