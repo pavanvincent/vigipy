@@ -124,7 +124,7 @@ def gps(
     #    ]
     #)
     
-    input_params["prior_init_values"] = [0.2041, 0.05816, 1.415, 1.838, 0.0969]
+    input_params["prior_init"] = [0.2041, 0.05816, 1.415, 1.838, 0.0969]
     priors = np.asarray([0.2041, 0.05816, 1.415, 1.838, 0.0969])
        
     DATA = container.data
