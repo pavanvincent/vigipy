@@ -31,7 +31,7 @@ BOUNDED_METHODS = {
 
 def gps(
     container,
-    relative_risk=1,
+    # relative_risk=1,
     min_events=1,
     # decision_metric="rank",
     # decision_thres=0.05,
@@ -107,6 +107,7 @@ def gps(
     input_params = locals()
     del input_params["container"]
 
+    relative_risk=1,
     decision_metric="rank"
     decision_thres=0.05
     truncate_thres=1
