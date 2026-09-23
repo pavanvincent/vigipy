@@ -309,6 +309,7 @@ def gps(
     RES.param["input_params"] = input_params
     RES.param["computation_params"] = computation_params
     RES.param["convergence"] = code_convergence
+    RES.param["priors"] = priors
 
     #--------------------------------------
     # SIGNALS RESULTS and presentation
