@@ -33,17 +33,17 @@ def gps(
     container,
     relative_risk=1,
     min_events=1,
-    decision_metric="rank",
-    decision_thres=0.05,
-    ranking_statistic="quantile",
+    # decision_metric="rank",
+    # decision_thres=0.05,
+    # ranking_statistic="quantile",
     truncate=False,
-    truncate_thres=1,
-    prior_param=None,
-    expected_method="mantel-haentzel",
-    method_alpha=1,
-    minimization_method="SLSQP",
-    minimization_bounds=((EPS, 20), (EPS, 10), (EPS, 20), (EPS, 10), (0, 1)),
-    minimization_options=None,
+    # truncate_thres=1,
+    # prior_param=None,
+    # expected_method="mantel-haentzel",
+    # method_alpha=1,
+    # minimization_method="SLSQP",
+    # minimization_bounds=((EPS, 20), (EPS, 10), (EPS, 20), (EPS, 10), (0, 1)),
+    # minimization_options=None,
 ):
     """
     Computes signal detection based on Multi-item enabled Gamma Poisson Shrinkage (GPS) using prior distributions
@@ -107,11 +107,22 @@ def gps(
     input_params = locals()
     del input_params["container"]
 
+    decision_metric="rank"
+    decision_thres=0.05
+    truncate_thres=1
+    expected_method="mantel-haentzel"
+    method_alpha=1
+    minimization_method="SLSQP"
+    minimization_bounds=((EPS, 20), (EPS, 10), (EPS, 20), (EPS, 10), (0, 1))
+    minimization_options=None
+
+    
+
     alpha1 =0.5*(EPS + 20) 
     beta1 =0.5* (EPS + 10)
     alpha2 = 0.5*(EPS + 20)
     beta2 = 0.5*(EPS +10)
-    w = np.float64(0.5*(0 + 1))
+    w = 0.5*(0 + 1)
     priors = np.asarray([alpha1, beta1, alpha2, beta2, w])
     input_params["prior_init"] = priors
     DATA = container.data
