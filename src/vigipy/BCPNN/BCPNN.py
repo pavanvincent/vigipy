@@ -115,46 +115,54 @@ def bcpnn(
         lower_bound = np.asarray(lower_bound)
         upper_bound = np.asarray(upper_bound)
 
-    # 1. On s'assure d'avoir des objets NumPy propres
-    # posterior_prob est ici P(H0), la probabilité de l'hypothèse nulle
-    p_h0 = np.asarray(posterior_prob)  
-    p_h1 = 1.0 - p_h0                  # Probabilité de l'hypothèse alternative (vrai signal)
     
-    # 2. Calcul des masses totales attendues dans la base
-    total_vrais_signaux = np.sum(p_h1)
-    total_vrais_negatifs = np.sum(p_h0)
-    num_cell = len(p_h0)
+    #-------------------------------
+    # Compute FDR, FNR, Se and Sp
+    #-------------------------------
     
-    # 3. Cumuls de gauche à droite (du meilleur signal au moins bon)
-    vrais_positifs_cum = np.cumsum(p_h1)
-    faux_positifs_cum = np.cumsum(p_h0)
-    post_range = np.arange(1, num_cell + 1)
+    # 1. Compute Null (H0) and Alternative (H1) hypothesis probability
+    #----------------------------------------------------------------
+    p_h0 = np.asarray(posterior_prob)  # posterior_prob represents P(H0), the null hypothesis probability
+    p_h1 = 1.0 - p_h0                  # Alternative hypothesis probability (true signal)
     
-    # --- FORMULES CORRIGÉES ---
+    # 2. Compute total expected masses in the baseline
+    #-------------------------------------------------
+    total_true_signals = np.sum(p_h1)
+    total_true_negatives = np.sum(p_h0)
+    num_cells = len(p_h0)
     
-    # FDR : proportion de faux positifs parmi les k alertes levées
-    FDR = faux_positifs_cum / post_range
+    # 3. Cumulative sums from left to right (from highest to lowest signal)
+    #-----------------------------------------------------------------------
+    true_positives_cum = np.cumsum(p_h1)
+    false_positives_cum = np.cumsum(p_h0)
+    post_range = np.arange(1, num_cells + 1)
     
-    # Se : proportion de vrais signaux capturés parmi le total disponible
-    Se = vrais_positifs_cum / (total_vrais_signaux + 1e-7)
     
-    # FNR : proportion de vrais signaux manqués (ceux restants à droite du curseur)
-    # Équivalent strict à : FNR = 1.0 - Se
-    vrais_signaux_manques = total_vrais_signaux - vrais_positifs_cum
-    FNR = vrais_signaux_manques / (total_vrais_signaux + 1e-7)
+    # FDR: proportion of false positives among the k raised alerts
+    #--------------------------------------------------------------
+    FDR = false_positives_cum / post_range
     
-    # Sp : proportion de vrais négatifs préservés (ceux restants à droite du curseur)
-    vrais_negatifs_preserves = total_vrais_negatifs - faux_positifs_cum
-    Sp = vrais_negatifs_preserves / (total_vrais_negatifs + 1e-7)
+    # Sensitivity (Se): proportion of captured true signals out of the total available
+    #----------------------------------------------------------------------------------
+    sensitivity = true_positives_cum / (total_true_signals + 1e-7)
+    
+    # FNR: proportion of missed true signals (those remaining to the right of the threshold)
+    # Strictly equivalent to: FNR = 1.0 - Sensitivity
+    #----------------------------------------------------------------------------------------
+    missed_true_signals = total_true_signals - true_positives_cum
+    FNR = missed_true_signals / (total_true_signals + 1e-7)
 
+    #---------------------------------------
+    # Results
+    #------------------------------
     name = DATA["product_name"]
     ae = DATA["ae_name"]
     count = n11
     RC = Container(params=True)
-
     RC.param["input_params"] = input_params
 
     # SIGNALS RESULTS and presentation
+    #----------------------------------
     RC.all_signals = pd.DataFrame(
         {
             "Product": name,
@@ -173,7 +181,10 @@ def bcpnn(
         }
     ).sort_values(by=["lower_bound"], ascending=False)
     RC.signals = RC.all_signals.loc[RC.all_signals["lower_bound"] > 1]
-    
+
+    # Calculate total number of detected signals: criterion is lower_bound > 0
+    # This is exactly stating that IC025 > 0
+    #--------------------------------------------------------------------------
     num_signals = (lower_bound > 0).sum()
 
     # Number of signals
