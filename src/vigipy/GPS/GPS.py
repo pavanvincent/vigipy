@@ -136,7 +136,7 @@ def gps(
     n1j = np.asarray(DATA["product_aes"], dtype=np.float64)
     ni1 = np.asarray(DATA["count_across_brands"], dtype=np.float64)
     expected = calculate_expected(N, n1j, ni1, n11, expected_method, method_alpha)
-    p_out = False
+    # p_out = False
 
     #----------------------------------------------------------------------------------------
     # Launch optimization algorithm to find hypergeometrical parameters of the prior
