@@ -136,7 +136,7 @@ def gps(
     n1j = np.asarray(DATA["product_aes"], dtype=np.float64)
     ni1 = np.asarray(DATA["count_across_brands"], dtype=np.float64)
     expected = calculate_expected(N, n1j, ni1, n11, expected_method, method_alpha)
-    # p_out = False
+    p_out = True
 
     #----------------------------------------------------------------------------------------
     # Launch optimization algorithm to find hypergeometrical parameters of the prior
@@ -147,46 +147,53 @@ def gps(
     # 1) either non truncated likelihood (imput argument truncated = False)
     # 2) either truncated objective likelihood (imput argument truncated = true
     #-----------------------------------------------------------------------------------------
-   
+    if prior_param is None:
+        p_out = False
+        if minimization_method not in BOUNDED_METHODS:
+            minimization_bounds = None
 
-    if not truncate:
-        data_cont = container.contingency
-        n1__mat = data_cont.sum(axis=1)
-        n_1_mat = data_cont.sum(axis=0)
-        rep = len(n_1_mat)
-        n1__c = np.tile(n1__mat.values, reps=rep)
-        rep = len(n1__mat)
-        n_1_c = np.repeat(n_1_mat.values, repeats=rep)
-        E_c = np.asarray(n1__c, dtype=np.float64) * n_1_c / N
-        n11_c_temp = []
-        for col in data_cont:
-            n11_c_temp.extend(list(data_cont[col]))
-        n11_c = np.asarray(n11_c_temp)
+        if minimization_options is None:
+            minimization_options = {}
 
-         p_out = minimize(
-            non_truncated_likelihood,
-            x0=priors,
-            args=(n11_c, E_c),
-            options={"maxiter": 500},
-            method=minimization_method,
-            bounds=minimization_bounds,
-            **minimization_options,
-        )
-    elif truncate:
-        trunc = truncate_thres - 1
-        p_out = minimize(
-            truncated_likelihood,
-            x0=priors,
-            args=(
-                n11[n11 >= truncate_thres],
-                expected[n11 >= truncate_thres],
-                trunc,
-            ),
-            options={"maxiter": 500},
-            method=minimization_method,
-            bounds=minimization_bounds,
-            **minimization_options,
-        )
+        if not truncate:
+            data_cont = container.contingency
+            n1__mat = data_cont.sum(axis=1)
+            n_1_mat = data_cont.sum(axis=0)
+            rep = len(n_1_mat)
+            n1__c = np.tile(n1__mat.values, reps=rep)
+            rep = len(n1__mat)
+            n_1_c = np.repeat(n_1_mat.values, repeats=rep)
+            E_c = np.asarray(n1__c, dtype=np.float64) * n_1_c / N
+            n11_c_temp = []
+            for col in data_cont:
+                n11_c_temp.extend(list(data_cont[col]))
+            n11_c = np.asarray(n11_c_temp)
+
+            p_out = minimize(
+                non_truncated_likelihood,
+                x0=priors,
+                args=(n11_c, E_c),
+                options={"maxiter": 500},
+                method=minimization_method,
+                bounds=minimization_bounds,
+                **minimization_options,
+            )
+        elif truncate:
+            trunc = truncate_thres - 1
+            p_out = minimize(
+                truncated_likelihood,
+                x0=priors,
+                args=(
+                    n11[n11 >= truncate_thres],
+                    expected[n11 >= truncate_thres],
+                    trunc,
+                ),
+                options={"maxiter": 500},
+                method=minimization_method,
+                bounds=minimization_bounds,
+                **minimization_options,
+            )
+
         #--------------------------------------------------------------------------------
         # get prior parameters alpha_1, beta_1, alpha_2, beta_2, w in "priors" variable
         #--------------------------------------------------------------------------------
