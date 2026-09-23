@@ -16,7 +16,7 @@ pnbinom = np.vectorize(pnbinom)
 digamma = np.vectorize(gamma_functions.digamma)
 quantiles = np.vectorize(quantiles)
 
-EPS = np.finfo(np.float32).eps
+EPS = np.finfo(np.float64).eps
 BOUNDED_METHODS = {
     "Nelder-Mead",
     "L-BFGS-B",
@@ -107,11 +107,11 @@ def gps(
     input_params = locals()
     del input_params["container"]
 
-    alpha1 = 0.5*(EPS + 20) 
-    beta1 = 0.5* (EPS + 10)
-    alpha2 = 0.5*(EPS + 20)
-    beta2 = 0.5*(EPS +10)
-    w = 0.5*(0 + 1)
+    alpha1 = np.float64(0.5*(EPS + 20)) 
+    beta1 = np.float64(0.5* (EPS + 10))
+    alpha2 = np.float64(0.5*(EPS + 20))
+    beta2 = np.float(0.5*(EPS +10))
+    w = np.float(0.5*(0 + 1))
     input_params["prior_init"] = [alpha1, beta1, alpha2, beta2, w]
     priors = np.asarray([alpha1, beta1, alpha2, beta2, w])
     DATA = container.data
