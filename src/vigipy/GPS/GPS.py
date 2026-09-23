@@ -276,7 +276,7 @@ def gps(
     #-----------------------------------------------------------------------
     true_positives_cum = np.cumsum(p_h1)
     false_positives_cum = np.cumsum(p_h0)
-    post_range = np.arange(1, num_cells + 1)
+    post_range = np.arange(1, num_cell + 1)
     
     
     # FDR: proportion of false positives among the k raised alerts
