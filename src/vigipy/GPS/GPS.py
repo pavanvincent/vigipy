@@ -109,7 +109,7 @@ def gps(
 
     alpha1 = 0.5*(EPS + 20) 
     beta1 = 0.5* (EPS + 10)
-    alpha2 = 0.5*(EPS, + 20)
+    alpha2 = 0.5*(EPS + 20)
     beta2 = 0.5*(EPS +10)
     w = 0.5*(0 + 1)
     # input_params["prior_init"] = [0.2041, 0.05816, 1.415, 1.838, 0.0969]
