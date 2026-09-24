@@ -67,7 +67,7 @@ def prr(
             "N_{00}": n00,
             "PRR": np.exp(log_prr),
             "LB(CI 95%)" : np.exp(log_LB),
-            "UP(CI 95%)" : np.exp(log_UB),
+            # "UP(CI 95%)" : np.exp(log_UB),
             "p-value" : pval_uni,
         },
         index=np.arange(len(n11)),
