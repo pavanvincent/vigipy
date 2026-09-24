@@ -329,10 +329,10 @@ def non_truncated_likelihood(p, n11, E):
 def truncated_likelihood(p, n11, E, truncate):
     dnb1 = nbinom(n=p[0], p=p[1] / (p[1] + E)).pmf(n11)
     dnb2 = nbinom(n=p[2], p=p[3] / (p[3] + E)).pmf(n11)
-    term1 = p[4] * dnb1 + (1 - p[4]) * dnb2
+    term1 = p[4] * dnb1 + (1 - p[4]) * dnb2 + 1e-7
 
     pnb1 = nbinom(n=p[0], p=p[1] / (p[1] + E)).cdf(truncate)
     pnb2 = nbinom(n=p[2], p=p[3] / (p[3] + E)).cdf(truncate)
-    term2 = 1 - (p[4] * pnb1 + (1 - p[4]) * pnb2)
+    term2 = 1 - (p[4] * pnb1 + (1 - p[4]) * pnb2) + 1e-12
 
     return np.sum(-np.log(term1 / term2))
