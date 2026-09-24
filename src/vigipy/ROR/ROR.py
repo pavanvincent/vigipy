@@ -67,7 +67,7 @@ def ror(
             "N_{00}": n00,
             "ROR": np.exp(log_ror),
             "LB(CI 95%)" : np.exp(log_LB),
-            "UP(CI 95%)" : np.exp(log_UB),
+            # "UP(CI 95%)" : np.exp(log_UB),
             "p-value" : pval_uni,
         },
         index=np.arange(len(n11)),
