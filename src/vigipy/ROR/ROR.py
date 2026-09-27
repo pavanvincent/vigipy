@@ -42,20 +42,37 @@ def ror(
     n10 = n1j - n11
     n01 = ni1 - n11 + 1e-7
     n00 = N - (n11 + n10 + n01)
-   
+
+    # compute log (ROR) and VAR(log(ROR)) using Woolf method
+    #----------------------------------------------------------
     log_ror = np.log(n11 * n00 / (n10 * n01))
     var_log_ror = 1.0 / n11 + 1.0 / n10 + 1.0 / n01 + 1.0 / n00
-    
+
+    # Get credibility interval at 95%
+    #--------------------------------------------------------
     log_LB = norm.ppf(0.025, log_ror, np.sqrt(var_log_ror))
     log_UB = norm.ppf(0.975,log_ror, np.sqrt(var_log_ror))
-    
+
+    # exception when log_UB > max_log_value
+    #---------------------------------------------
+    max_log_value = np.log(np.finfo(np.float64).max)
+    ub_exp = np.full_like(log_UB, np.inf)
+    safe_mask = log_UB <= max_log_value
+    ub_exp[safe_mask] = np.exp(log_UB[safe_mask])
+
+    # compute p-value
+    #------------------
     ror_H0 = 1
     pval_uni = 1 - norm.cdf(log_ror, np.log(ror_H0), np.sqrt(var_log_ror))
     pval_uni[pval_uni > 1] = 1
     pval_uni[pval_uni < 0] = 0
-   
+
+    # count number of signal using decision criterion log_LB > 0
+    #-------------------------------------------------------------
     num_signals = (log_LB > 0).sum()
 
+    # Return results
+    #------------------------
     RC = Container()
     RC.all_signals = pd.DataFrame(
         {
@@ -67,7 +84,7 @@ def ror(
             "N_{00}": n00,
             "ROR": np.exp(log_ror),
             "LB(CI 95%)" : np.exp(log_LB),
-            # "UP(CI 95%)" : np.exp(log_UB),
+            "UP(CI 95%)" : ub_exp,
             "p-value" : pval_uni,
         },
         index=np.arange(len(n11)),
