@@ -44,7 +44,7 @@ def gps(
     container : object
         A container object holding the input data, including event counts (`events`),
         product-event pairs (`product_aes`), and across-brand counts (`count_across_brands`).
-    min_events : int, optional (default=1)
+    min_events : int, optional (default=4)
         The minimum number of events required for an adverse event to be considered in the analysis.
     truncate : bool, optional (default=False)
     maxiter : maximal number of iterations in optimization algorithm
