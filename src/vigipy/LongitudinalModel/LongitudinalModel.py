@@ -38,31 +38,49 @@ class LongitudinalModel:
             return convert_multi_item(data, **conversion_kwargs)
 
 
-    def run(self, model, include_gaps=True, conversion_type="base", conversion_kwargs=None, **kwargs):
-        """
-        Run the longitudinal model as initialized.
+    # def run(self, model, include_gaps=True, conversion_type="base", conversion_kwargs=None, **kwargs):
+    #    """
+    #    Run the longitudinal model as initialized.
+    #
+    #    Arguments:
+    #        model (vigipy model): One of the supported vigipy models
+    #                              from this module (i.e. gps, prr, etc)
+    #
+    #        include_gaps (bool): If a particular time slice has a
+    #                             zero-count sum, still run the model?
+    #
+    #        kwargs: key word arguments can be added to this function call
+    #                and they will be passed into the model at run time.
+    #
+    #    """
+    #    self.results = []
+    #    for timestamp, count in self.date_groups.sum()["count"].items():
+    #        if count == 0:
+    #            if include_gaps:
+    #                self.results.append((timestamp, None))
+    #            continue
+    #
+    #        subset = self.data.loc[self.data["date"] <= timestamp]
+    #        sub_container = self._convert(subset, conversion_type, conversion_kwargs)
+    #        self._run_model(model, sub_container, timestamp, include_gaps, kwargs)
 
-        Arguments:
-            model (vigipy model): One of the supported vigipy models
-                                  from this module (i.e. gps, prr, etc)
-
-            include_gaps (bool): If a particular time slice has a
-                                 zero-count sum, still run the model?
-
-            kwargs: key word arguments can be added to this function call
-                    and they will be passed into the model at run time.
-
-        """
-        self.results = []
-        for timestamp, count in self.date_groups.sum()["count"].items():
-            if count == 0:
-                if include_gaps:
-                    self.results.append((timestamp, None))
-                continue
-
-            subset = self.data.loc[self.data["date"] <= timestamp]
-            sub_container = self._convert(subset, conversion_type, conversion_kwargs)
-            self._run_model(model, sub_container, timestamp, include_gaps, kwargs)
+    def run(self, model, include_gaps=True, conversion_type="base", conversion_kwargs=None, n_jobs=-1, **kwargs):
+        """Version parallélisée de run() utilisant joblib"""
+        num_cores = multiprocessing.cpu_count() if n_jobs == -1 else n_jobs
+        
+        # Préparation des tâches à envoyer aux cœurs CPU
+        tasks = [
+            delayed(self._worker_run)(
+                timestamp, count, model, include_gaps, conversion_type, conversion_kwargs, kwargs
+            )
+            for timestamp, count in self.date_groups.sum()["count"].items()
+        ]
+        
+        # Exécution parallèle sur les 8 cœurs de Colab Pro
+        raw_results = Parallel(n_jobs=num_cores)(tasks)
+        
+        # Nettoyage des résultats (on filtre les valeurs None si include_gaps=False)
+        self.results = [res for res in raw_results if res is not None]
 
     def run_disjoint(self, model, include_gaps=True, conversion_type="base", conversion_kwargs=None, **kwargs):
         """
