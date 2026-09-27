@@ -6,7 +6,7 @@ from ..utils import Container
 
 def ror(
     container,
-    min_events=1,
+    min_events=4,
 ):
     """
     Calculate the reporting odds ratio (ROR):
