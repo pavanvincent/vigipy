@@ -10,7 +10,7 @@ trigamma = np.vectorize(gamma_functions.trigamma)
 
 def bcpnn(
     container,
-    min_events=1,
+    min_events=4,
     MC=False,
     num_MC=10000,
 ):
