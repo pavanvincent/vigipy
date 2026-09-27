@@ -4,7 +4,8 @@ import warnings
 from scipy.special import gdtr
 from scipy.stats import nbinom
 from scipy.optimize import minimize
-from sympy.functions.special import gamma_functions
+# from sympy.functions.special import gamma_functions
+from scipy.special import digamma
 
 from ..utils import Container
 from ..utils import calculate_expected
@@ -13,7 +14,7 @@ from ..utils.distribution_funcs.quantile_funcs import quantiles
 
 dnbinom = np.vectorize(dnbinom)
 pnbinom = np.vectorize(pnbinom)
-digamma = np.vectorize(gamma_functions.digamma)
+# digamma = np.vectorize(gamma_functions.digamma)
 quantiles = np.vectorize(quantiles)
 
 EPS = np.finfo(np.float64).eps
