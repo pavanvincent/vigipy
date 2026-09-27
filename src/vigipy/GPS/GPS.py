@@ -33,6 +33,7 @@ def gps(
     container,
     min_events=4,
     truncate=False,
+    maxiter=500,
 ):
     """
     Computes signal detection based on Multi-item enabled Gamma Poisson Shrinkage (GPS) using prior distributions
@@ -46,6 +47,7 @@ def gps(
     min_events : int, optional (default=1)
         The minimum number of events required for an adverse event to be considered in the analysis.
     truncate : bool, optional (default=False)
+    maxiter : maximal number of iterations in optimization algorithm
 
     Returns:
     --------
@@ -107,6 +109,19 @@ def gps(
     expected = calculate_expected(N, n1j, ni1, n11, expected_method, method_alpha)
     p_out = True
 
+    #--------------------------------------------------------
+    # exclude product / ae pairs with low numbers of events
+    #--------------------------------------------------------
+    DATA = DATA[DATA.events >= min_events]
+    expected = expected[n11 >= min_events]
+    n1j = n1j[n11 >= min_events]
+    ni1 = ni1[n11 >= min_events]
+    n11 = n11[n11 >= min_events]
+   
+    n10 = n1j - n11
+    n01 = ni1 - n11 + 1e-7
+    n00 = N - (n11 + n10 + n01)
+
     #----------------------------------------------------------------------------------------
     # Launch optimization algorithm to find hypergeometrical parameters of the prior
     # priori is sum of two independant Gamma laws, whose parameters are 
@@ -141,7 +156,7 @@ def gps(
             non_truncated_likelihood,
             x0=priors,
             args=(n11_c, E_c),
-            options={"maxiter": 1000},
+            options={"maxiter": maxiter},
             method=minimization_method,
             bounds=minimization_bounds,
             **minimization_options,
@@ -156,7 +171,7 @@ def gps(
                 expected[n11 >= truncate_thres],
                 trunc,
             ),
-            options={"maxiter": 1000},
+            options={"maxiter": maxiter},
             method=minimization_method,
             bounds=minimization_bounds,
             **minimization_options,
@@ -171,17 +186,7 @@ def gps(
             f"Calculated priors violate distribution constraints. Alpha and Beta parameters should be >0 and mixture weight should be >=0 and <=1. Current priors: {priors}. Numerical instability likely during processing. Considering using a minimization method that supports bounds."
         )
     code_convergence = p_out.message
-
-    #--------------------------------------------------------
-    # exclude product / ae pairs with low numbers of events
-    #--------------------------------------------------------
-    if min_events > 1:
-        DATA = DATA[DATA.events >= min_events]
-        expected = expected[n11 >= min_events]
-        n1j = n1j[n11 >= min_events]
-        ni1 = ni1[n11 >= min_events]
-        n11 = n11[n11 >= min_events]
-
+   
     #------------------------------------------------------------------------
     # Calculation of the posterior probability of the null hypothesis p_{H0}
     #------------------------------------------------------------------------
