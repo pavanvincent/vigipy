@@ -48,6 +48,13 @@ def rfet(
     var_log_rfet = 1.0 / n11 + 1.0 / n10 + 1.0 / n01 + 1.0 / n00
     log_LB = norm.ppf(0.025, log_rfet, np.sqrt(var_log_rfet))
     log_UB = norm.ppf(0.975,log_rfet, np.sqrt(var_log_rfet))
+
+    # exception when log_UB > max_log_value
+    #---------------------------------------------
+    max_log_value = np.log(np.finfo(np.float64).max)
+    ub_exp = np.full_like(log_UB, np.inf)
+    safe_mask = log_UB <= max_log_value
+    ub_exp[safe_mask] = np.exp(log_UB[safe_mask])
     
     pval_fish_uni = np.empty((num_cell))
     for p in range(num_cell):
