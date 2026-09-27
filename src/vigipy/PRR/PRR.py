@@ -31,9 +31,13 @@ def prr(
     DATA = container.data
     N = container.N
 
+    # discard (product name / adverse event) pairs with event <= min_events
+    #----------------------------------------------------------------
     if min_events > 1:
         DATA = DATA[DATA.events >= min_events]
 
+    # get contingency values
+    #------------------------------------------------------
     n11 = np.asarray(DATA["events"], dtype=np.float64)
     n1j = np.asarray(DATA["product_aes"], dtype=np.float64)
     ni1 = np.asarray(DATA["count_across_brands"], dtype=np.float64)
@@ -43,18 +47,35 @@ def prr(
     n01 = ni1 - n11 + 1e-7
     n00 = N - (n11 + n10 + n01)
 
+    
+    # compute log(PRR) and VAR(LOG(PRR))
+    #-------------------------------------------------------------
     log_prr = np.log((n11 / (n11 + n10)) / (n01 / (n01 + n00)))
     var_log_prr = 1 / n11 - 1 / (n11 + n10) + 1 / n01 - 1 / (n01 + n00)
 
+    # compute lower and upper bound
+    #------------------------------------------------------
+    log_LB = norm.ppf(0.025, log_prr, np.sqrt(var_log_prr))
+    log_UB = norm.ppf(0.975, log_prr, np.sqrt(var_log_prr))
+
+    # exception when log_UB > max_log_value
+    #---------------------------------------------
+    max_log_value = np.log(np.finfo(np.float64).max)
+    ub_exp = np.full_like(log_UB, np.inf)
+    safe_mask = log_UB <= max_log_value
+    ub_exp[safe_mask] = np.exp(log_UB[safe_mask])
+
+    # compute p-value
+    #--------------------------------------
     prr_H0 = 1
     pval_uni = 1 - norm.cdf(log_prr, np.log(prr_H0), np.sqrt(var_log_prr))
     pval_uni[pval_uni > 1] = 1
     pval_uni[pval_uni < 0] = 0
 
    
-    log_LB = norm.ppf(0.025, log_prr, np.sqrt(var_log_prr))
-    log_UB = norm.ppf(0.975, log_prr, np.sqrt(var_log_prr))
-            
+    # count number of signals, unsin criterion decison (log_LB > 0
+    # store results
+    #----------------------------------------------------------------
     num_signals = (log_LB > 0).sum()
     RC = Container()
     RC.all_signals = pd.DataFrame(
@@ -67,7 +88,7 @@ def prr(
             "N_{00}": n00,
             "PRR": np.exp(log_prr),
             "LB(CI 95%)" : np.exp(log_LB),
-            # "UP(CI 95%)" : np.exp(log_UB),
+            "UB(CI 95%)" : ub_exp,
             "p-value" : pval_uni,
         },
         index=np.arange(len(n11)),
