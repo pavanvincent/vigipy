@@ -84,7 +84,7 @@ def rfet(
             "N_{00}": n00,
             "ROR": np.exp(log_rfet),
             "LB(CI 95%)" : np.exp(log_LB),
-            # "UP(CI 95%)" : np.exp(log_UB),
+            "UB(CI 95%)" : ub_exp,
             "p-value" : pval_uni,
         },
         index=np.arange(len(n11)),
