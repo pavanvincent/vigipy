@@ -31,9 +31,13 @@ def ror(
     DATA = container.data
     N = container.N
 
+    # discard (product name / adverse event) pairs with event <= min_events
+    #----------------------------------------------------------------
     if min_events > 1:
         DATA = DATA[DATA.events >= min_events]
 
+    # get contingency values
+    #------------------------------------------------------
     n11 = np.asarray(DATA["events"], dtype=np.float64)
     n1j = np.asarray(DATA["product_aes"], dtype=np.float64)
     ni1 = np.asarray(DATA["count_across_brands"], dtype=np.float64)
