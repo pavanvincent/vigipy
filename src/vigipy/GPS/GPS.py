@@ -31,7 +31,7 @@ BOUNDED_METHODS = {
 
 def gps(
     container,
-    min_events=1,
+    min_events=4,
     truncate=False,
 ):
     """
