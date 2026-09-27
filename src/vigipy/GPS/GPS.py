@@ -1,11 +1,9 @@
 ﻿import pandas as pd
 import numpy as np
 import warnings
-from scipy.special import gdtr
+from scipy.special import gdtr, digamma
 from scipy.stats import nbinom
 from scipy.optimize import minimize
-# from sympy.functions.special import gamma_functions
-from scipy.special import digamma
 
 from ..utils import Container
 from ..utils import calculate_expected
@@ -14,8 +12,7 @@ from ..utils.distribution_funcs.quantile_funcs import quantiles
 
 dnbinom = np.vectorize(dnbinom)
 pnbinom = np.vectorize(pnbinom)
-# digamma = np.vectorize(gamma_functions.digamma)
-quantiles = np.vectorize(quantiles)
+# quantiles = np.vectorize(quantiles)
 
 EPS = np.finfo(np.float64).eps
 BOUNDED_METHODS = {
@@ -222,6 +219,7 @@ def gps(
         priors[1] + expected,
         priors[2] + n11,
         priors[3] + expected,
+        n_jobs = n_jobs,
     )
 
     #-------------------------------------------------------------------------
@@ -234,6 +232,7 @@ def gps(
         priors[1] + expected,
         priors[2] + n11,
         priors[3] + expected,
+        n_jobs = n_jobs,
     )
    
     #----------------------------------------------------------------
