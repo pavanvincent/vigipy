@@ -32,6 +32,7 @@ def gps(
     min_events=4,
     truncate=False,
     maxiter=500,
+    n_jobs = -1,
 ):
     """
     Computes signal detection based on Multi-item enabled Gamma Poisson Shrinkage (GPS) using prior distributions
