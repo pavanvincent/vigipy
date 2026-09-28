@@ -148,11 +148,12 @@ def gps(
         # n_1_c = np.repeat(n_1_mat.values, repeats=rep)
         n_1_c = np.repeat(np.asarray(n_1_mat), repeats=rep) 
         E_c = np.asarray(n1__c, dtype=np.float64) * n_1_c / N
-        n11_c_temp = []
-        for col in data_cont:
-            n11_c_temp.extend(list(data_cont[col]))
-        n11_c = np.asarray(n11_c_temp)
-
+        # n11_c_temp = []
+        # for col in data_cont:
+        #    n11_c_temp.extend(list(data_cont[col]))
+        # n11_c = np.asarray(n11_c_temp)
+        n11_c = np.asarray(data_cont).flatten(order="F")
+        
         p_out = minimize(
             non_truncated_likelihood,
             x0=priors,
