@@ -84,7 +84,7 @@ def convert(
     # 3. Extraction de la matrice NumPy
     # La première colonne est le nom du produit, le reste est la matrice
     product_names = pivot_df[product_label].to_numpy()
-    data_cont = pivot_df.drop(product_label).to_numpy(dtype=np.float64)
+    data_cont = pivot_df.drop(product_label).cast(pl.Float64).to_numpy()
 
     # 4. Calculs des marges (Ultra rapides sur matrice NumPy contiguë)
     col_sums = np.sum(data_cont, axis=0)
