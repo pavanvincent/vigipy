@@ -142,9 +142,11 @@ def gps(
         n1__mat = data_cont.sum(axis=1)
         n_1_mat = data_cont.sum(axis=0)
         rep = len(n_1_mat)
-        n1__c = np.tile(n1__mat.values, reps=rep)
+        # n1__c = np.tile(n1__mat.values, reps=rep)
+        n1__c = np.tile(np.asarray(n1__mat), reps=rep) 
         rep = len(n1__mat)
-        n_1_c = np.repeat(n_1_mat.values, repeats=rep)
+        # n_1_c = np.repeat(n_1_mat.values, repeats=rep)
+        n_1_c = np.repeat(np.asarray(n_1_mat), repeats=rep) 
         E_c = np.asarray(n1__c, dtype=np.float64) * n_1_c / N
         n11_c_temp = []
         for col in data_cont:
