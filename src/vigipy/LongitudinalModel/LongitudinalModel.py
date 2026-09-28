@@ -186,6 +186,7 @@ class LongitudinalModel:
         # 3. Exécution parallèle pure
         raw_results = Parallel(n_jobs=num_cores, backend="multiprocessing")(tasks)
         self.results = [res for res in raw_results if res is not None]
+        return self.results
 
     def run(self, model, include_gaps=True, conversion_type="base", conversion_kwargs=None, n_jobs=-1, **kwargs):
         """
@@ -195,6 +196,7 @@ class LongitudinalModel:
         """
         num_cores = multiprocessing.cpu_count() if n_jobs == -1 else n_jobs
         timestamps = list(self.date_groups.groups.keys())
+        return self.results
         
         # Optimisation : On utilise la recherche dichotomique ou le slicing d'index pré-triés
         tasks = []
