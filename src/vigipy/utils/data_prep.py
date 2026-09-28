@@ -53,20 +53,43 @@ def convert(
     return DC
 
 
+# def compute_contingency(data_frame, product_label, count_label, ae_label, margin_threshold):
+#    """Compute the contingency table for DA
+#
+#    Args:
+#        data_frame (pd.DataFrame): A count data dataframe of the drug/device and events data
+#        product_label (str): Label of the column containing the product names
+#        count_label (str): Label of the column containing the event counts
+#        ae_label (str): Label of the column containing the adverse event counts
+#        margin_threshold (int): The minimum number of events required to keep a drug/device-event pair.
+#
+#    Returns:
+#        pd.DataFrame: A contingency table with adverse events as columns and products as rows.
+#    """
+#    # Create a contingency table based on the brands and AEs
+#    data_cont = pd.pivot_table(
+#        data_frame,
+#        values=count_label,
+#        index=product_label,
+#        columns=ae_label,
+#        aggfunc="sum",
+#        fill_value=0,
+#    )
+#
+#    # Calculate empty rows/columns based on margin_threshold and remove
+#    cut_rows = np.where(np.sum(data_cont, axis=1) < margin_threshold)
+#    drop_rows = data_cont.index[cut_rows]
+#
+#    cut_cols = np.where(np.sum(data_cont, axis=0) < margin_threshold)
+#    drop_cols = data_cont.columns[cut_cols]
+#
+#    data_cont = data_cont.drop(drop_rows)
+#    data_cont = data_cont.drop(drop_cols, axis=1)
+#    return data_cont
+
 def compute_contingency(data_frame, product_label, count_label, ae_label, margin_threshold):
-    """Compute the contingency table for DA
-
-    Args:
-        data_frame (pd.DataFrame): A count data dataframe of the drug/device and events data
-        product_label (str): Label of the column containing the product names
-        count_label (str): Label of the column containing the event counts
-        ae_label (str): Label of the column containing the adverse event counts
-        margin_threshold (int): The minimum number of events required to keep a drug/device-event pair.
-
-    Returns:
-        pd.DataFrame: A contingency table with adverse events as columns and products as rows.
-    """
-    # Create a contingency table based on the brands and AEs
+    """Compute the contingency table for DA - Version optimisée en mémoire"""
+    # Création de la table de contingence
     data_cont = pd.pivot_table(
         data_frame,
         values=count_label,
@@ -76,17 +99,12 @@ def compute_contingency(data_frame, product_label, count_label, ae_label, margin
         fill_value=0,
     )
 
-    # Calculate empty rows/columns based on margin_threshold and remove
-    cut_rows = np.where(np.sum(data_cont, axis=1) < margin_threshold)
-    drop_rows = data_cont.index[cut_rows]
+    # Filtrage direct et simultané des lignes et colonnes via un masque booléen
+    row_mask = data_cont.sum(axis=1) >= margin_threshold
+    col_mask = data_cont.sum(axis=0) >= margin_threshold
 
-    cut_cols = np.where(np.sum(data_cont, axis=0) < margin_threshold)
-    drop_cols = data_cont.columns[cut_cols]
-
-    data_cont = data_cont.drop(drop_rows)
-    data_cont = data_cont.drop(drop_cols, axis=1)
-    return data_cont
-
+    # On ne conserve que les intersections valides
+    return data_cont.loc[row_mask, col_mask]
 
 def convert_binary(
     data, product_label="name", ae_label="AE", use_counts=False, count_label="count", expand_counts=True
