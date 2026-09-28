@@ -129,6 +129,7 @@
 #        self.date_groups = self.data.resample(time_unit, on="date")
 
 import pandas as pd
+import numpy as np
 import multiprocessing
 from joblib import Parallel, delayed
 from ..utils import convert, convert_binary, convert_multi_item
