@@ -174,7 +174,7 @@ class LongitudinalModel:
     #    except ValueError:
     #        return (timestamp, None) if include_gaps else None
 
-     def _worker_disjoint(self, timestamp, end_idx, model, include_gaps, conversion_type, conversion_kwargs, kwargs):
+    def _worker_disjoint(self, timestamp, end_idx, model, include_gaps, conversion_type, conversion_kwargs, kwargs):
         # Si aucun enregistrement n'existe jusqu'à cette date
         if end_idx == 0:
             return (timestamp, None) if include_gaps else None
@@ -190,8 +190,6 @@ class LongitudinalModel:
             
         except ValueError:
             return (timestamp, None) if include_gaps else None
-
-
 
     def run_disjoint(self, model, include_gaps=True, conversion_type="base", conversion_kwargs=None, n_jobs=-1, **kwargs):
         """Version optimisée : Extraction des données en amont pour éviter l'overhead de resample"""
