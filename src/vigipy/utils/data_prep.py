@@ -3,9 +3,54 @@ from collections import Counter, defaultdict
 
 import numpy as np
 import pandas as pd
-
+import polars as pl
 from .Container import Container
 
+
+# def convert(
+#    data_frame,
+#    margin_threshold=1,
+#    product_label="name",
+#    count_label="count",
+#    ae_label="AE",
+#):
+#    """
+#    Convert a Pandas dataframe object into a container class for use
+#    with the disproportionality analyses. Column names in the DataFrame
+#    must include or be specified in the arguments:
+#        "name" -- A brand/generic name for the product. This module
+#                    expects that you have already cleaned the data
+#                    so there is only one name associated with a class.
+#        "AE" -- The adverse event(s) associated with a drug/device.
+#        "count" -- The number of AEs associated with that drug/device
+#                    and AE. You can input a sheet with single counts
+#                    (i.e. duplicate rows) or pre-aggregated counts.
+#
+#    Arguments:
+#        data_frame (Pandas DataFrame): The Pandas DataFrame object
+#
+#        margin_threshold (int): The threshold for counts. Lower numbers will
+#                             be removed from consideration
+#
+#    Returns:
+#        RES (DataStorage object): A container object that holds the necessary
+#                                    components for DA.
+#
+#    """
+#    data_cont = compute_contingency(data_frame, product_label, count_label, ae_label, margin_threshold)
+#    col_sums = np.sum(data_cont, axis=0)
+#    row_sums = np.sum(data_cont, axis=1)
+#
+#    # Compute the flattened table from the contingency table.
+#    data_df = count(data_cont, row_sums, col_sums)
+#
+#    # Initialize the container object and assign the data
+#    DC = Container()
+#    DC.contingency = data_cont
+#    DC.data = data_df
+#    DC.N = data_df["events"].sum()
+#    DC.type = "contingency"
+#    return DC
 
 def convert(
     data_frame,
@@ -14,37 +59,65 @@ def convert(
     count_label="count",
     ae_label="AE",
 ):
-    """
-    Convert a Pandas dataframe object into a container class for use
-    with the disproportionality analyses. Column names in the DataFrame
-    must include or be specified in the arguments:
-        "name" -- A brand/generic name for the product. This module
-                    expects that you have already cleaned the data
-                    so there is only one name associated with a class.
-        "AE" -- The adverse event(s) associated with a drug/device.
-        "count" -- The number of AEs associated with that drug/device
-                    and AE. You can input a sheet with single counts
-                    (i.e. duplicate rows) or pre-aggregated counts.
+# 1. Conversion instantanée en DataFrame Polars (multi-threadé)
+    if not isinstance(data_frame, pl.DataFrame):
+        lf = pl.from_pandas(data_frame).lazy()
+    else:
+        lf = data_frame.lazy()
 
-    Arguments:
-        data_frame (Pandas DataFrame): The Pandas DataFrame object
+    # 2. Agrégation parallèle et Pivot (Équivalent de compute_contingency)
+    # On groupe d'abord pour s'assurer que c'est agrégé, puis on pivote
+    agg_lf = (
+        lf.group_by([product_label, ae_label])
+        .agg(pl.col(count_label).sum())
+        .filter(pl.col(count_label) >= margin_threshold)
+    )
+    
+    # Pivot pour obtenir la matrice de contingence
+    pivot_df = agg_lf.collect().pivot(
+        on=ae_label,
+        index=product_label,
+        values=count_label,
+        aggregate_function="sum"
+    ).fill_null(0)
 
-        margin_threshold (int): The threshold for counts. Lower numbers will
-                             be removed from consideration
+    # 3. Extraction de la matrice NumPy
+    # La première colonne est le nom du produit, le reste est la matrice
+    product_names = pivot_df[product_label].to_numpy()
+    data_cont = pivot_df.drop(product_label).to_numpy(dtype=np.float64)
 
-    Returns:
-        RES (DataStorage object): A container object that holds the necessary
-                                    components for DA.
-
-    """
-    data_cont = compute_contingency(data_frame, product_label, count_label, ae_label, margin_threshold)
+    # 4. Calculs des marges (Ultra rapides sur matrice NumPy contiguë)
     col_sums = np.sum(data_cont, axis=0)
     row_sums = np.sum(data_cont, axis=1)
 
-    # Compute the flattened table from the contingency table.
-    data_df = count(data_cont, row_sums, col_sums)
+    # 5. Reconstruction optimisée de data_df (Équivalent de count())
+    # Au lieu d'une fonction 'count' lente, on vectorise l'aplatissement :
+    num_products, num_aes = data_cont.shape
+    
+    # Répétition des sommes marginales pour s'aligner sur la matrice aplatie
+    n1j = np.repeat(row_sums, num_aes)
+    ni1 = np.tile(col_sums, num_products)
+    n11 = data_cont.ravel()
+    
+    # Masque pour filtrer selon le seuil
+    mask = n11 >= margin_threshold
+    
+    # Génération des colonnes de texte associées
+    ae_names = np.array(pivot_df.drop(product_label).columns)
+    all_products = np.repeat(product_names, num_aes)
+    all_aes = np.tile(ae_names, num_products)
 
-    # Initialize the container object and assign the data
+    # Création du DataFrame final réduit
+    import pandas as pd
+    data_df = pd.DataFrame({
+        "product_name": all_products[mask],
+        "ae_name": all_aes[mask],
+        "events": n11[mask],
+        "product_aes": n1j[mask],
+        "count_across_brands": ni1[mask]
+    })
+
+    # 6. Remplissage du Container VIGIPY
     DC = Container()
     DC.contingency = data_cont
     DC.data = data_df
@@ -52,40 +125,6 @@ def convert(
     DC.type = "contingency"
     return DC
 
-
-# def compute_contingency(data_frame, product_label, count_label, ae_label, margin_threshold):
-#    """Compute the contingency table for DA
-#
-#    Args:
-#        data_frame (pd.DataFrame): A count data dataframe of the drug/device and events data
-#        product_label (str): Label of the column containing the product names
-#        count_label (str): Label of the column containing the event counts
-#        ae_label (str): Label of the column containing the adverse event counts
-#        margin_threshold (int): The minimum number of events required to keep a drug/device-event pair.
-#
-#    Returns:
-#        pd.DataFrame: A contingency table with adverse events as columns and products as rows.
-#    """
-#    # Create a contingency table based on the brands and AEs
-#    data_cont = pd.pivot_table(
-#        data_frame,
-#        values=count_label,
-#        index=product_label,
-#        columns=ae_label,
-#        aggfunc="sum",
-#        fill_value=0,
-#    )
-#
-#    # Calculate empty rows/columns based on margin_threshold and remove
-#    cut_rows = np.where(np.sum(data_cont, axis=1) < margin_threshold)
-#    drop_rows = data_cont.index[cut_rows]
-#
-#    cut_cols = np.where(np.sum(data_cont, axis=0) < margin_threshold)
-#    drop_cols = data_cont.columns[cut_cols]
-#
-#    data_cont = data_cont.drop(drop_rows)
-#    data_cont = data_cont.drop(drop_cols, axis=1)
-#    return data_cont
 
 def compute_contingency(data_frame, product_label, count_label, ae_label, margin_threshold):
     """Compute the contingency table for DA - Version optimisée en mémoire"""
@@ -207,36 +246,6 @@ def convert_multi_item(df, product_label=["name"], ae_label="AE", count_label="c
 
     return DC
 
-
-# def count(data, rows, cols):
-#    """
-#    Convert the input contingency table to a flattened table
-#
-#    Arguments:
-#        data (Pandas DataFrame): A contingency table of brands and events
-#
-#    Returns:
-#        df: A Pandas DataFrame with the count information
-#
-#    """
-#    d = {
-#        "events": [],
-#        "product_aes": [],
-#        "count_across_brands": [],
-#        "ae_name": [],
-#        "product_name": [],
-#    }
-#    for col, row in product(data.columns, data.index):
-#        n11 = data[col][row]
-#        if n11 > 0:
-#            d["count_across_brands"].append(cols[col])
-#            d["product_aes"].append(rows[row])
-#            d["events"].append(n11)
-#            d["product_name"].append(row)
-#            d["ae_name"].append(col)
-#
-#    df = pd.DataFrame(d)
-#    return df
 
 def count(data, rows, cols):
     """
