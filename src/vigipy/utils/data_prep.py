@@ -190,35 +190,56 @@ def convert_multi_item(df, product_label=["name"], ae_label="AE", count_label="c
     return DC
 
 
+# def count(data, rows, cols):
+#    """
+#    Convert the input contingency table to a flattened table
+#
+#    Arguments:
+#        data (Pandas DataFrame): A contingency table of brands and events
+#
+#    Returns:
+#        df: A Pandas DataFrame with the count information
+#
+#    """
+#    d = {
+#        "events": [],
+#        "product_aes": [],
+#        "count_across_brands": [],
+#        "ae_name": [],
+#        "product_name": [],
+#    }
+#    for col, row in product(data.columns, data.index):
+#        n11 = data[col][row]
+#        if n11 > 0:
+#            d["count_across_brands"].append(cols[col])
+#            d["product_aes"].append(rows[row])
+#            d["events"].append(n11)
+#            d["product_name"].append(row)
+#            d["ae_name"].append(col)
+#
+#    df = pd.DataFrame(d)
+#    return df
+
 def count(data, rows, cols):
     """
     Convert the input contingency table to a flattened table
-
-    Arguments:
-        data (Pandas DataFrame): A contingency table of brands and events
-
-    Returns:
-        df: A Pandas DataFrame with the count information
-
+    Version optimisée 100% vectorisée (sans boucle for).
     """
-    d = {
-        "events": [],
-        "product_aes": [],
-        "count_across_brands": [],
-        "ae_name": [],
-        "product_name": [],
-    }
-    for col, row in product(data.columns, data.index):
-        n11 = data[col][row]
-        if n11 > 0:
-            d["count_across_brands"].append(cols[col])
-            d["product_aes"].append(rows[row])
-            d["events"].append(n11)
-            d["product_name"].append(row)
-            d["ae_name"].append(col)
-
-    df = pd.DataFrame(d)
-    return df
+    # 1. On "empile" la matrice : cela crée une Série dont l'index est un MultiIndex (Product, AE)
+    # On filtre immédiatement les valeurs supérieures à 0 pour ne garder que les signaux réels
+    stacked = data.stack()
+    stacked = stacked[stacked > 0]
+    
+    # 2. On transforme cette structure en DataFrame plat
+    df = stacked.reset_index()
+    df.columns = ["product_name", "ae_name", "events"]
+    
+    # 3. On applique les totaux marginaux (rows et cols) de manière instantanée avec .map()
+    df["product_aes"] = df["product_name"].map(rows)
+    df["count_across_brands"] = df["ae_name"].map(cols)
+    
+    # 4. On réordonne les colonnes pour respecter STRICTEMENT le format attendu par VIGIPY
+    return df[["events", "product_aes", "count_across_brands", "ae_name", "product_name"]]
 
 def _sanitize_data(df, keep_labels):
     keep = []
