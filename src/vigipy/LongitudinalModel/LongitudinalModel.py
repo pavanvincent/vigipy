@@ -249,8 +249,9 @@ class LongitudinalModel:
         num_cores = multiprocessing.cpu_count() if n_jobs == -1 else n_jobs
         timestamps = list(self.date_groups.groups.keys())
         
-        # Recherche dichotomique ultra-rapide (O(log N)) pour trouver la position de fin
-        end_indices = np.searchsorted(self.data["date"].values, timestamps, side="right")
+        # Remplacement : On utilise le .searchsorted() natif de Pandas sur la Série
+        end_indices = self.data["date"].searchsorted(timestamps, side="right")
+
         
         # Préparation des tâches : on passe l'entier `end_idx` au lieu du DataFrame lourd `subset`
         tasks = [
