@@ -196,7 +196,7 @@ class LongitudinalModel:
         """
         num_cores = multiprocessing.cpu_count() if n_jobs == -1 else n_jobs
         timestamps = list(self.date_groups.groups.keys())
-        return self.results
+       
         
         # Optimisation : On utilise la recherche dichotomique ou le slicing d'index pré-triés
         tasks = []
@@ -213,6 +213,7 @@ class LongitudinalModel:
             
         raw_results = Parallel(n_jobs=num_cores, backend="multiprocessing")(tasks)
         self.results = [res for res in raw_results if res is not None]
+        return self.results
 
     def regroup_dates(self, time_unit):
         self.time_unit = time_unit
