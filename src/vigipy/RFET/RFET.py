@@ -67,20 +67,45 @@ def rfet(
 
     # compute p-value usqing Fischer exact test FET
     #-----------------------------------------------
-    pval_fish_uni = np.empty((num_cell))
-    for p in range(num_cell):
-        table = [[n11[p], n10[p]], [n01[p], n00[p]]]
-        pval_fish_uni[p] = fisher_exact(table, alternative="greater")[1]
-
+    # pval_fish_uni = np.empty((num_cell))
+    # for p in range(num_cell):
+    #    table = [[n11[p], n10[p]], [n01[p], n00[p]]]
+    #    pval_fish_uni[p] = fisher_exact(table, alternative="greater")[1]
+    #
+    # =========================================================================
+    # 4. OPTIMISATION MAJEURE : Remplacement du Test de Fisher par hypergeom
+    # =========================================================================
+    # Paramètres de la loi hypergéométrique (tous au format entier/array)
+    # M : Nombre total de billes (N_total)
+    # n : Nombre de billes tirées (Total de la ligne : n11 + n10)
+    # N_succ : Nombre total de billes "succès" (Total de la colonne : n11 + n01)
+    M = (n11 + n10 + n01 + n00).astype(np.int64)
+    n = (n11 + n10).astype(np.int64)
+    N_succ = (n11 + n01).astype(np.int64)
+    # P-value unilatérale supérieure ("greater") : P(X >= n11)
+    # En termes de CDF/SF : P(X >= x) = P(X > x - 1) = sf(x - 1)
+    # On force n11 en entier pour la précision d'hypergeom
+    k = n11.astype(np.int64)
+    pval_uni = hypergeom.sf(k - 1, M, n, N_succ)
+    
+    # if mid_pval:
+    #    for p in range(num_cell):
+    #        pval_fish_uni[p] = pval_fish_uni[p] - 0.5 * hypergeom.pmf(
+    #            n11[p], n11[p] + n10[p], n11[p] + n01[p], n10[p] + n00[p]
+    #        )
+    # Application de la mid-p-value de manière purement vectorielle
     if mid_pval:
-        for p in range(num_cell):
-            pval_fish_uni[p] = pval_fish_uni[p] - 0.5 * hypergeom.pmf(
-                n11[p], n11[p] + n10[p], n11[p] + n01[p], n10[p] + n00[p]
-            )
+        pmf_val = hypergeom.pmf(k, M, n, N_succ)
+        pval_uni = pval_uni - 0.5 * pmf_val
 
-    pval_uni = pval_fish_uni
-    pval_uni[pval_uni > 1] = 1
-    pval_uni[pval_uni < 0] = 0
+    # Remplacement efficace des valeurs hors bornes [0, 1] (très rapide avec np.clip)
+    np.clip(pval_uni, 0, 1, out=pval_uni)
+
+    
+
+    # pval_uni = pval_fish_uni
+    # pval_uni[pval_uni > 1] = 1
+    # pval_uni[pval_uni < 0] = 0
 
     # count number of signal using decision criterion log_LB > 0
     #-------------------------------------------------------------
