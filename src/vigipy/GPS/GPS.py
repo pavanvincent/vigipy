@@ -301,8 +301,8 @@ def gps(
             "Product": name,
             "Adverse Event": ae,
             "EBGM": np.float64(2**EBlog2),
-            "LB05 FDA" : LB05,
-            "UB95 FDA" : UB95,
+            "EB05" : LB05,
+            "EB95" : UB95,
             "p_{H0}": p_h0,
             "N_{11}": n11,
             "N_{10}": n10,
@@ -314,7 +314,7 @@ def gps(
             "Sp": Sp, 
         }
     )
-    RES.all_signals = RES.all_signals.sort_values(by=["LB05 FDA"], ascending=False)
+    RES.all_signals = RES.all_signals.sort_values(by=["EB05"], ascending=False)
     
 
     # List of Signals generated according to the method
@@ -324,13 +324,13 @@ def gps(
     # num_signals = np.sum(LB05 >= np.float64(2))
     # RES.num_signals = num_signals
     # RES.signals = RES.all_signals.iloc[0:num_signals,]
-    # 1. Tri par EBGM décroissant (ou LB05 FDA selon votre préférence d'affichage)
-    RES.all_signals = RES.all_signals.sort_values(by=["LBO5 FDA"], ascending=False)
+    # 1. Tri par EBGM décroissant 
+    RES.all_signals = RES.all_signals.sort_values(by=["EB05"], ascending=False)
     RES.all_signals.index = np.arange(0, len(RES.all_signals.index))
 
     # 2. Application du double critère FDA : EBGM >= 2 ET EB05 (LB05) > 1
     # On crée un masque booléen pour identifier les lignes qui respectent les deux conditions
-    signal_mask = (RES.all_signals["EBGM"] >= np.float64(2)) & (RES.all_signals["LB05 FDA"] > np.float64(1))
+    signal_mask = (RES.all_signals["EBGM"] >= np.float64(2)) & (RES.all_signals["EB05"] > np.float64(1))
     
     # 3. Extraction des signaux et comptage
     RES.signals = RES.all_signals[signal_mask].copy()
