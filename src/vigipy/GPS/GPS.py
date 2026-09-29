@@ -325,7 +325,7 @@ def gps(
     # RES.num_signals = num_signals
     # RES.signals = RES.all_signals.iloc[0:num_signals,]
     # 1. Tri par EBGM décroissant (ou LB05 FDA selon votre préférence d'affichage)
-    RES.all_signals = RES.all_signals.sort_values(by=["LBO5"], ascending=False)
+    RES.all_signals = RES.all_signals.sort_values(by=["LBO5 FDA"], ascending=False)
     RES.all_signals.index = np.arange(0, len(RES.all_signals.index))
 
     # 2. Application du double critère FDA : EBGM >= 2 ET EB05 (LB05) > 1
