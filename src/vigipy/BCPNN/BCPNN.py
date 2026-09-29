@@ -1,12 +1,8 @@
 import numpy as np
 import pandas as pd
 from scipy.stats import norm
-# from sympy.functions.special import gamma_functions
-from ..utils import Container
-
-# digamma = np.vectorize(gamma_functions.digamma)
-# trigamma = np.vectorize(gamma_functions.trigamma)
 from scipy.special import digamma, polygamma
+from ..utils import Container
 
 # La fonction trigamma est mathématiquement la 1ère dérivée de digamma (polygamma d'ordre 1)
 def trigamma(x):
@@ -77,8 +73,26 @@ def bcpnn(
         lower_bound = norm.ppf(0.025, IC, np.sqrt(IC_variance))
         upper_bound = norm.ppf(0.975, IC, np.sqrt(IC_variance))
     else:
-        num_MC = float(num_MC)
-        # Priors for the contingency table
+        # num_MC = float(num_MC)
+        # # Priors for the contingency table
+        # q1j = (n1j + 0.5) / (N + 1)
+        # qi1 = (ni1 + 0.5) / (N + 1)
+        # qi0 = (N - ni1 + 0.5) / (N + 1)
+        # q0j = (N - n1j + 0.5) / (N + 1)
+        # 
+        # a_ = 0.5 / (q1j * qi1)
+        # 
+        # a11 = q1j * qi1 * a_
+        # a10 = q1j * qi0 * a_
+        # a01 = q0j * qi1 * a_
+        # a00 = q0j * qi0 * a_
+        # 
+        # g11 = a11 + n11
+        # g10 = a10 + n10
+        # g01 = a01 + n01
+        # g00 = a00 + n00
+
+        # Priors vectorisés (calcul direct en une seule étape)
         q1j = (n1j + 0.5) / (N + 1)
         qi1 = (ni1 + 0.5) / (N + 1)
         qi0 = (N - ni1 + 0.5) / (N + 1)
@@ -86,15 +100,10 @@ def bcpnn(
 
         a_ = 0.5 / (q1j * qi1)
 
-        a11 = q1j * qi1 * a_
-        a10 = q1j * qi0 * a_
-        a01 = q0j * qi1 * a_
-        a00 = q0j * qi0 * a_
-
-        g11 = a11 + n11
-        g10 = a10 + n10
-        g01 = a01 + n01
-        g00 = a00 + n00
+        g11 = (q1j * qi1 * a_) + n11
+        g10 = (q1j * qi0 * a_) + n10
+        g01 = (q0j * qi1 * a_) + n01
+        g00 = (q0j * qi0 * a_) + n00
 
         posterior_prob = []
         lower_bound = []
