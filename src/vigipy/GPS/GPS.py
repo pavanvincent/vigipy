@@ -12,7 +12,6 @@ from ..utils.distribution_funcs.quantile_funcs import quantiles
 
 dnbinom = np.vectorize(dnbinom)
 pnbinom = np.vectorize(pnbinom)
-# quantiles = np.vectorize(quantiles)
 
 EPS = np.finfo(np.float64).eps
 BOUNDED_METHODS = {
@@ -48,7 +47,10 @@ def gps(
         The minimum number of events required for an adverse event to be considered in the analysis.
     truncate : bool, optional (default=False)
     maxiter : maximal number of iterations in optimization algorithm
-
+    criterion : usual FDA safety alert criterion. Can be either
+        - "EB05 >=2"  or - "EB05>1 & EGBM>=2"
+    n_jobs = number of cores for paralelization
+    
     Returns:
     --------
     RES : object
@@ -143,16 +145,10 @@ def gps(
         n1__mat = data_cont.sum(axis=1)
         n_1_mat = data_cont.sum(axis=0)
         rep = len(n_1_mat)
-        # n1__c = np.tile(n1__mat.values, reps=rep)
         n1__c = np.tile(np.asarray(n1__mat), reps=rep) 
         rep = len(n1__mat)
-        # n_1_c = np.repeat(n_1_mat.values, repeats=rep)
         n_1_c = np.repeat(np.asarray(n_1_mat), repeats=rep) 
         E_c = np.asarray(n1__c, dtype=np.float64) * n_1_c / N
-        # n11_c_temp = []
-        # for col in data_cont:
-        #    n11_c_temp.extend(list(data_cont[col]))
-        # n11_c = np.asarray(n11_c_temp)
         n11_c = np.asarray(data_cont).flatten(order="F")
         
         p_out = minimize(
@@ -330,13 +326,13 @@ def gps(
     RES.all_signals.index = np.arange(0, len(RES.all_signals.index))
 
     
-    # 2. Application du double critère FDA : EBGM >= 2 ET EB05 (LB05) > 1 pou EB05 >=2
-    # On crée un masque booléen pour identifier les lignes qui respectent les deux conditions
+    # 2. Application of the FDA dual criterion: EBGM >= 2 AND EB05 (LB05) > 1 or EB05 >= 2
+    # We create a Boolean mask to identify the rows that meet both conditions
     if  criterion == "EB05>=2" :
         signal_mask = (RES.all_signals["EB05"] >= np.float64(2)) 
     elif criterion == "EB05 > 1 & EBGM >=2":
         signal_mask = (RES.all_signals["EBGM"] >= np.float64(2)) & (RES.all_signals["EB05"] > np.float64(1))
-    # 3. Extraction des signaux et comptage
+    # 3. Signal extraction and counting
     RES.signals = RES.all_signals[signal_mask].copy()
     RES.num_signals = len(RES.signals)
    
