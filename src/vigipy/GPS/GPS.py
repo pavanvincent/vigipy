@@ -32,6 +32,7 @@ def gps(
     min_events=4,
     truncate=False,
     maxiter=500,
+    criterion= "EB05>=2"
     n_jobs = -1,
 ):
     """
@@ -328,10 +329,13 @@ def gps(
     RES.all_signals = RES.all_signals.sort_values(by=["EB05"], ascending=False)
     RES.all_signals.index = np.arange(0, len(RES.all_signals.index))
 
-    # 2. Application du double critère FDA : EBGM >= 2 ET EB05 (LB05) > 1
-    # On crée un masque booléen pour identifier les lignes qui respectent les deux conditions
-    signal_mask = (RES.all_signals["EBGM"] >= np.float64(2)) & (RES.all_signals["EB05"] > np.float64(1))
     
+    # 2. Application du double critère FDA : EBGM >= 2 ET EB05 (LB05) > 1 pou EB05 >=2
+    # On crée un masque booléen pour identifier les lignes qui respectent les deux conditions
+    if  criterion == "EB05>=2" :
+        signal_mask = (RES.all_signals["EB05"] >= np.float64(2)) 
+    elif criterion == "EB05 > 1 & EBGM >=2":
+        signal_mask = (RES.all_signals["EBGM"] >= np.float64(2)) & (RES.all_signals["EB05"] > np.float64(1))
     # 3. Extraction des signaux et comptage
     RES.signals = RES.all_signals[signal_mask].copy()
     RES.num_signals = len(RES.signals)
