@@ -59,21 +59,21 @@ def convert(
     count_label="count",
     ae_label="AE",
 ):
-# 1. Conversion instantanée en DataFrame Polars (multi-threadé)
+# 1. Instant conversion to Polars DataFrame (multi-threaded)
     if not isinstance(data_frame, pl.DataFrame):
         lf = pl.from_pandas(data_frame).lazy()
     else:
         lf = data_frame.lazy()
 
-    # 2. Agrégation parallèle et Pivot (Équivalent de compute_contingency)
-    # On groupe d'abord pour s'assurer que c'est agrégé, puis on pivote
+    # 2. Parallel Aggregation and Pivot (Equivalent to compute_contingency)
+    # We first group to ensure it's aggregated, then we pivot
     agg_lf = (
         lf.group_by([product_label, ae_label])
         .agg(pl.col(count_label).sum())
         .filter(pl.col(count_label) >= margin_threshold)
     )
     
-    # Pivot pour obtenir la matrice de contingence
+    # Pivot to obtain the contingency matrix
     pivot_df = agg_lf.collect().pivot(
         on=ae_label,
         index=product_label,
@@ -81,33 +81,33 @@ def convert(
         aggregate_function="sum"
     ).fill_null(0)
 
-    # 3. Extraction de la matrice NumPy
-    # La première colonne est le nom du produit, le reste est la matrice
+    # 3. Extracting the NumPy matrix
+    # The first column is the product name, the rest is the matrix
     product_names = pivot_df[product_label].to_numpy()
     data_cont = pivot_df.drop(product_label).cast(pl.Float64).to_numpy()
 
-    # 4. Calculs des marges (Ultra rapides sur matrice NumPy contiguë)
+    # 4. Margin calculations (Ultra-fast on a contiguous NumPy matrix)
     col_sums = np.sum(data_cont, axis=0)
     row_sums = np.sum(data_cont, axis=1)
 
-    # 5. Reconstruction optimisée de data_df (Équivalent de count())
-    # Au lieu d'une fonction 'count' lente, on vectorise l'aplatissement :
+    # 5. Optimized reconstruction of data_df (Equivalent to count())
+    # Instead of a slow 'count' function, we vectorize the flattening:
     num_products, num_aes = data_cont.shape
     
-    # Répétition des sommes marginales pour s'aligner sur la matrice aplatie
+    # Repetition of marginal sums to align with the flattened matrix
     n1j = np.repeat(row_sums, num_aes)
     ni1 = np.tile(col_sums, num_products)
     n11 = data_cont.ravel()
     
-    # Masque pour filtrer selon le seuil
+    # Mask to filter according to the threshold
     mask = n11 >= margin_threshold
     
-    # Génération des colonnes de texte associées
+    # Generation of associated text columns
     ae_names = np.array(pivot_df.drop(product_label).columns)
     all_products = np.repeat(product_names, num_aes)
     all_aes = np.tile(ae_names, num_products)
 
-    # Création du DataFrame final réduit
+    # Creation of the final reduced DataFrame
     import pandas as pd
     data_df = pd.DataFrame({
         "product_name": all_products[mask],
@@ -117,7 +117,7 @@ def convert(
         "count_across_brands": ni1[mask]
     })
 
-    # 6. Remplissage du Container VIGIPY
+    # 6. Filling the VIGIPY Container
     DC = Container()
     DC.contingency = data_cont
     DC.data = data_df
@@ -127,8 +127,8 @@ def convert(
 
 
 def compute_contingency(data_frame, product_label, count_label, ae_label, margin_threshold):
-    """Compute the contingency table for DA - Version optimisée en mémoire"""
-    # Création de la table de contingence
+    """Compute the contingency table for DA - Memory-optimized version"""
+    # Creation of the contingency table
     data_cont = pd.pivot_table(
         data_frame,
         values=count_label,
@@ -138,11 +138,11 @@ def compute_contingency(data_frame, product_label, count_label, ae_label, margin
         fill_value=0,
     )
 
-    # Filtrage direct et simultané des lignes et colonnes via un masque booléen
+    # Direct and simultaneous filtering of rows and columns via a Boolean mask
     row_mask = data_cont.sum(axis=1) >= margin_threshold
     col_mask = data_cont.sum(axis=0) >= margin_threshold
 
-    # On ne conserve que les intersections valides
+    # Only valid intersections are kept.
     return data_cont.loc[row_mask, col_mask]
 
 def convert_binary(
@@ -252,20 +252,20 @@ def count(data, rows, cols):
     Convert the input contingency table to a flattened table
     Version optimisée 100% vectorisée (sans boucle for).
     """
-    # 1. On "empile" la matrice : cela crée une Série dont l'index est un MultiIndex (Product, AE)
-    # On filtre immédiatement les valeurs supérieures à 0 pour ne garder que les signaux réels
+    # 1. We "stack" the matrix: this creates a Series whose index is a MultiIndex (Product, AE)
+    # Values ​​greater than 0 are immediately filtered out to retain only the real signals.
     stacked = data.stack()
     stacked = stacked[stacked > 0]
     
-    # 2. On transforme cette structure en DataFrame plat
+    # 2. We transform this structure into a flat DataFrame
     df = stacked.reset_index()
     df.columns = ["product_name", "ae_name", "events"]
     
-    # 3. On applique les totaux marginaux (rows et cols) de manière instantanée avec .map()
+    # 3. We apply marginal totals (rows and cols) instantly using .map()
     df["product_aes"] = df["product_name"].map(rows)
     df["count_across_brands"] = df["ae_name"].map(cols)
     
-    # 4. On réordonne les colonnes pour respecter STRICTEMENT le format attendu par VIGIPY
+    # 4. The columns are reordered to STRICTLY comply with the format expected by VIGIPY.
     return df[["events", "product_aes", "count_across_brands", "ae_name", "product_name"]]
 
 def _sanitize_data(df, keep_labels):
