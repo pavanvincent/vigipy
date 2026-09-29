@@ -86,38 +86,11 @@ def bcpnn(
         g01 = (q0j * qi1 * a_) + n01
         g00 = (q0j * qi0 * a_) + n00
 
-        # posterior_prob = []
-        # lower_bound = []
-        # upper_bound = []
-        # IC = []
         posterior_prob = np.empty(num_cell, dtype=np.float64)
         IC = np.empty(num_cell, dtype=np.float64)
         lower_bound = np.empty(num_cell, dtype=np.float64)
         upper_bound = np.empty(num_cell, dtype=np.float64)
         relative_risk=1
-
-        
-        # gamma11 = np.random.gamma(g11[:, np.newaxis], 1.0, size=(num_cell, num_MC))
-        # gamma10 = np.random.gamma(g10[:, np.newaxis], 1.0, size=(num_cell, num_MC))
-        # gamma01 = np.random.gamma(g01[:, np.newaxis], 1.0, size=(num_cell, num_MC))
-        # gamma00 = np.random.gamma(g00[:, np.newaxis], 1.0, size=(num_cell, num_MC))
-        
-        # total_gamma = gamma11 + gamma10 + gamma01 + gamma00
-        
-        # p11 = gamma11 / total_gamma
-        # p1_ = (gamma11 + gamma10) / total_gamma
-        # p_1 = (gamma11 + gamma01) / total_gamma
-        
-        # del gamma11, gamma10, gamma01, gamma00, total_gamma # Libération immédiate de la RAM
-        
-        # ic_monte = np.log2(p11 / (p1_ * p_1))
-        # del p11, p1_, p_1
-
-        # Extraction ultra-rapide des percentiles sans tri global
-        # posterior_prob = np.mean(ic_monte < 0.0, axis=1) # log2(1) = 0.0
-        # IC = np.percentile(ic_monte, 50.0, axis=1)
-        #lower_bound = np.percentile(ic_monte, 2.5, axis=1)
-        # upper_bound = np.percentile(ic_monte, 97.5, axis=1)
 
         # Taille du bloc adaptable. 2000 est idéal pour la RAM de Google Colab
         chunk_size = 2000  
@@ -146,10 +119,15 @@ def bcpnn(
             del p11, p1_, p_1
             
             # Calcul et stockage des statistiques pour ce bloc
-            posterior_prob[i:end] = np.mean(ic_monte < 0.0, axis=1)
-            IC[i:end] = np.percentile(ic_monte, 50.0, axis=1)
-            lower_bound[i:end] = np.percentile(ic_monte, 2.5, axis=1)
-            upper_bound[i:end] = np.percentile(ic_monte, 97.5, axis=1)
+            # posterior_prob[i:end] = np.mean(ic_monte < 0.0, axis=1)
+            # IC[i:end] = np.percentile(ic_monte, 50.0, axis=1)
+            # lower_bound[i:end] = np.percentile(ic_monte, 2.5, axis=1)
+            # upper_bound[i:end] = np.percentile(ic_monte, 97.5, axis=1)
+            # --- APPEL DU KERNEL PARALLÉLISÉ NUMBA ---
+            # Cette seule ligne remplace la boucle de chunking et s'exécute en parallèle C
+            posterior_prob, IC, lower_bound, upper_bound = _bcpnn_numba_kernel(
+            g11, g10, g01, g00, num_MC
+            )
             
             # Nettoyage de la matrice principale de l'itération
             del ic_monte
@@ -235,3 +213,64 @@ def bcpnn(
     # Number of signals
     RC.num_signals = num_signals
     return RC
+
+
+#-----------------------------------
+# parallelized for MC loop
+#--------------------------------------
+import numpy as np
+from numba import njit, prange
+
+@njit(parallel=True, fastmath=True)
+def _bcpnn_numba_kernel(g11, g10, g01, g00, num_MC):
+    num_cell = len(g11)
+    
+    # Pré-allocation des résultats finaux (un élément par cellule)
+    posterior_prob = np.empty(num_cell, dtype=np.float64)
+    IC = np.empty(num_cell, dtype=np.float64)
+    lower_bound = np.empty(num_cell, dtype=np.float64)
+    upper_bound = np.empty(num_cell, dtype=np.float64)
+    
+    # 'prange' indique à Numba de paralléliser cette boucle sur tous les cœurs CPU
+    for m in prange(num_cell):
+        # Tableau local à chaque thread pour stocker les tirages de la cellule courante
+        ic_monte = np.empty(num_MC, dtype=np.float64)
+        
+        # Simulation Monte Carlo pour la cellule 'm'
+        for i in range(num_MC):
+            # Tirage de lois Gamma thread-safe
+            gamma11 = np.random.gamma(g11[m], 1.0)
+            gamma10 = np.random.gamma(g10[m], 1.0)
+            gamma01 = np.random.gamma(g01[m], 1.0)
+            gamma00 = np.random.gamma(g00[m], 1.0)
+            
+            total = gamma11 + gamma10 + gamma01 + gamma00
+            
+            p11 = gamma11 / total
+            p1_ = (gamma11 + gamma10) / total
+            p_1 = (gamma11 + gamma01) / total
+            
+            # Évite une division par zéro si les probabilités sont nulles
+            if p1_ * p_1 > 0 and p11 > 0:
+                ic_monte[i] = np.log2(p11 / (p1_ * p_1))
+            else:
+                ic_monte[i] = -np.inf # Équivalent numérique d'une valeur impossible
+        
+        # Tri rapide local (fortement optimisé par Numba)
+        ic_monte.sort()
+        
+        # Calcul de la probabilité a posteriori (ic_monte < 0.0)
+        under_zero = 0
+        for i in range(num_MC):
+            if ic_monte[i] < 0.0:
+                under_zero += 1
+                
+        posterior_prob[m] = under_zero / num_MC
+        
+        # Extraction des percentiles directement sur le tableau trié
+        IC[m] = ic_monte[int(round(num_MC * 0.50))]
+        lower_bound[m] = ic_monte[int(round(num_MC * 0.025))]
+        upper_bound[m] = ic_monte[int(round(num_MC * 0.975))]
+        
+    return posterior_prob, IC, lower_bound, upper_bound
+
