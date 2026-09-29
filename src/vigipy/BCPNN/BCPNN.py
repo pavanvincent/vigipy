@@ -73,25 +73,6 @@ def bcpnn(
         lower_bound = norm.ppf(0.025, IC, np.sqrt(IC_variance))
         upper_bound = norm.ppf(0.975, IC, np.sqrt(IC_variance))
     else:
-        # num_MC = float(num_MC)
-        # # Priors for the contingency table
-        # q1j = (n1j + 0.5) / (N + 1)
-        # qi1 = (ni1 + 0.5) / (N + 1)
-        # qi0 = (N - ni1 + 0.5) / (N + 1)
-        # q0j = (N - n1j + 0.5) / (N + 1)
-        # 
-        # a_ = 0.5 / (q1j * qi1)
-        # 
-        # a11 = q1j * qi1 * a_
-        # a10 = q1j * qi0 * a_
-        # a01 = q0j * qi1 * a_
-        # a00 = q0j * qi0 * a_
-        # 
-        # g11 = a11 + n11
-        # g10 = a10 + n10
-        # g01 = a01 + n01
-        # g00 = a00 + n00
-
         # Priors vectorisés (calcul direct en une seule étape)
         q1j = (n1j + 0.5) / (N + 1)
         qi1 = (ni1 + 0.5) / (N + 1)
@@ -110,24 +91,44 @@ def bcpnn(
         upper_bound = []
         IC = []
         relative_risk=1
-        for m in range(num_cell):
-            alpha = [g11[m], g10[m], g01[m], g00[m]]
-            p = np.random.dirichlet(alpha, int(num_MC))
-            p11 = p[:, 0]
-            p1_ = p11 + p[:, 1]
-            p_1 = p11 + p[:, 2]
-            ic_monte = np.log2(p11 / (p1_ * p_1))
-            ic_monte = np.sort(ic_monte)
-            temp = 1 * (ic_monte < np.log2(relative_risk))
-            posterior_prob.append(sum(temp) / num_MC)
-            IC.append(ic_monte[round(num_MC * 0.50)])    
-            lower_bound.append(ic_monte[round(num_MC * 0.025)]) 
-            upper_bound.append(ic_monte[round(num_MC * 0.975)])
-        posterior_prob = np.asarray(posterior_prob)
-        IC = np.asarray(IC)
-        lower_bound = np.asarray(lower_bound)
-        upper_bound = np.asarray(upper_bound)
+        # for m in range(num_cell):
+        #    alpha = [g11[m], g10[m], g01[m], g00[m]]
+        #    p = np.random.dirichlet(alpha, int(num_MC))
+        #   p11 = p[:, 0]
+        #    p1_ = p11 + p[:, 1]
+        #    p_1 = p11 + p[:, 2]
+        #    ic_monte = np.log2(p11 / (p1_ * p_1))
+        #    ic_monte = np.sort(ic_monte)
+        #    temp = 1 * (ic_monte < np.log2(relative_risk))
+        #    posterior_prob.append(sum(temp) / num_MC)
+        #    IC.append(ic_monte[round(num_MC * 0.50)])    
+        #    lower_bound.append(ic_monte[round(num_MC * 0.025)]) 
+        #    upper_bound.append(ic_monte[round(num_MC * 0.975)])
+        #posterior_prob = np.asarray(posterior_prob)
+        #IC = np.asarray(IC)
+        #lower_bound = np.asarray(lower_bound)
+        #upper_bound = np.asarray(upper_bound)
+        gamma11 = np.random.gamma(g11[:, np.newaxis], 1.0, size=(num_cell, num_MC))
+        gamma10 = np.random.gamma(g10[:, np.newaxis], 1.0, size=(num_cell, num_MC))
+        gamma01 = np.random.gamma(g01[:, np.newaxis], 1.0, size=(num_cell, num_MC))
+        gamma00 = np.random.gamma(g00[:, np.newaxis], 1.0, size=(num_cell, num_MC))
+        
+        total_gamma = gamma11 + gamma10 + gamma01 + gamma00
+        
+        p11 = gamma11 / total_gamma
+        p1_ = (gamma11 + gamma10) / total_gamma
+        p_1 = (gamma11 + gamma01) / total_gamma
+        
+        del gamma11, gamma10, gamma01, gamma00, total_gamma # Libération immédiate de la RAM
+        
+        ic_monte = np.log2(p11 / (p1_ * p_1))
+        del p11, p1_, p_1
 
+        # Extraction ultra-rapide des percentiles sans tri global
+        posterior_prob = np.mean(ic_monte < 0.0, axis=1) # log2(1) = 0.0
+        IC = np.percentile(ic_monte, 50.0, axis=1)
+        lower_bound = np.percentile(ic_monte, 2.5, axis=1)
+        upper_bound = np.percentile(ic_monte, 97.5, axis=1)
     
     #-------------------------------
     # Compute FDR, FNR, Se and Sp
