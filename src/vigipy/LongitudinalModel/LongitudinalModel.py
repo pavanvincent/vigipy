@@ -11,7 +11,7 @@ class LongitudinalModel:
     def __init__(self, dataframe, time_unit):
         self.time_unit = time_unit
         dataframe["date"] = pd.to_datetime(dataframe["date"])
-        # Tri obligatoire indispensable pour np.searchsorted (recherche dichotomique)
+        # Sorting is mandatory and essential for np.searchsorted (binary search).
         self.data = dataframe.sort_values("date").reset_index(drop=True)
         self.date_groups = self.data.resample(time_unit, on="date")
         self.results = []
@@ -30,15 +30,14 @@ class LongitudinalModel:
 
 
     def _execute_disjoint_task(self, timestamp, end_idx, model, include_gaps, conversion_type, conversion_kwargs, kwargs):
-        # Si aucun enregistrement n'existe jusqu'à cette date
+        # If no record exists up to that date
         if end_idx == 0:
             return (timestamp, None) if include_gaps else None
             
         try:
-            # Le slicing par position (.iloc) est virtuel et instantané ici
+            # Positional slicing (.iloc) is virtual and instantaneous here.
             subset = self.data.iloc[:end_idx]
             
-            # Votre logique métier
             sub_container = self._convert(subset, conversion_type, conversion_kwargs)
             da_results = model(sub_container, **kwargs)
             return (timestamp, da_results)
@@ -46,30 +45,13 @@ class LongitudinalModel:
         except ValueError:
             return (timestamp, None) if include_gaps else None
 
-    # def run_disjoint(self, model, include_gaps=True, conversion_type="base", conversion_kwargs=None, **kwargs):
-    #   """Version séquentielle : Extraction des données en amont sans overhead de processus"""
-    #    # 1. On extrait les données de manière statique
-    #    counts = self.date_groups.sum()["count"]
-    #    group_data = [(timestamp, self.data.loc[idx]) for timestamp, idx in self.date_groups.groups.items()]
-    #    
-    #    # 2. Exécution séquentielle simple
-    #    raw_results = []
-    #    for timestamp, subset in group_data:
-    #        res = self._execute_disjoint_task(
-    #            timestamp, subset, counts.get(timestamp, 0), model, include_gaps, conversion_type, conversion_kwargs, kwargs
-    #        )
-    #        raw_results.append(res)
-    #    
-    #    self.results = [res for res in raw_results if res is not None]
-    #    return self.results
-
     def run_disjoint(self, model, include_gaps=True, conversion_type="base", conversion_kwargs=None, start_date=None, end_date=None, **kwargs):
-        """Version séquentielle : Extraction des données en amont filtrée sur un intervalle [start_date, end_date]"""
-        # 1. On extrait les données de manière statique
+        """Sequential version: Extraction of upstream data filtered over an interval [start_date, end_date]"""
+        # 1. The data is extracted statically
         counts = self.date_groups.sum()["count"]
         group_data = [(timestamp, self.data.loc[idx]) for timestamp, idx in self.date_groups.groups.items()]
         
-        # 🆕 Filtrage par start_date et end_date
+        # Filtering by start_date and end_date
         if start_date is not None:
             start_ts = pd.to_datetime(start_date)
             group_data = [(ts, sub) for ts, sub in group_data if ts >= start_ts]
@@ -78,7 +60,7 @@ class LongitudinalModel:
             end_ts = pd.to_datetime(end_date)
             group_data = [(ts, sub) for ts, sub in group_data if ts <= end_ts]
         
-        # 2. Exécution séquentielle simple
+        # 2. Simple sequential execution
         raw_results = []
         for timestamp, subset in group_data:
             res = self._execute_disjoint_task(
@@ -89,35 +71,13 @@ class LongitudinalModel:
         self.results = [res for res in raw_results if res is not None]
         return self.results
 
-    # def run(self, model, include_gaps=True, conversion_type="base", conversion_kwargs=None, **kwargs):
-    #    """
-    #    Version cumulée séquentielle : Cherche les index de découpe en O(log N) 
-    #    et exécute les tâches l'une après l'autre de manière stable.
-    #    """
-    #    timestamps = list(self.date_groups.groups.keys())
-    #    
-    #    # On utilise le .searchsorted() natif de Pandas sur la Série
-    #    end_indices = self.data["date"].searchsorted(timestamps, side="right")
-    #
-    #    # Exécution séquentielle pure
-    #    raw_results = []
-    #    for timestamp, end_idx in zip(timestamps, end_indices):
-    #        res = self._execute_disjoint_task(
-    #            timestamp, end_idx, model, include_gaps, conversion_type, conversion_kwargs, kwargs
-    #        )
-    #        raw_results.append(res)
-    #    
-    #    # Filtrage des None si include_gaps=False
-    #    self.results = [res for res in raw_results if res is not None]
-    #    return self.results
-
     def run(self, model, include_gaps=True, conversion_type="base", conversion_kwargs=None, start_date=None, end_date=None, **kwargs):
         """
-        Version cumulée séquentielle : Permet de filtrer sur un intervalle [start_date, end_date].
+        Sequential cumulative version: Allows filtering on an interval [start_date, end_date].
         """
         timestamps = list(self.date_groups.groups.keys())
         
-        # 🆕 Filtrage par start_date et end_date
+        # Filtering by start_date and end_date
         if start_date is not None:
             start_ts = pd.to_datetime(start_date)
             timestamps = [ts for ts in timestamps if ts >= start_ts]
@@ -126,10 +86,10 @@ class LongitudinalModel:
             end_ts = pd.to_datetime(end_date)
             timestamps = [ts for ts in timestamps if ts <= end_ts]
         
-        # On utilise le .searchsorted() natif de Pandas sur la Série
+        # We use Pandas' native .searchsorted() function on the Series
         end_indices = self.data["date"].searchsorted(timestamps, side="right")
 
-        # Exécution séquentielle pure
+        # Pure sequential execution
         raw_results = []
         for timestamp, end_idx in zip(timestamps, end_indices):
             res = self._execute_disjoint_task(
@@ -137,7 +97,7 @@ class LongitudinalModel:
             )
             raw_results.append(res)
         
-        # Filtrage des None si include_gaps=False
+        # Filtering of None entries if include_gaps=False
         self.results = [res for res in raw_results if res is not None]
         return self.results
 
