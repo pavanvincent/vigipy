@@ -1,12 +1,16 @@
 import numpy as np
 import pandas as pd
 from scipy.stats import norm
-from sympy.functions.special import gamma_functions
+# from sympy.functions.special import gamma_functions
 from ..utils import Container
 
-digamma = np.vectorize(gamma_functions.digamma)
-trigamma = np.vectorize(gamma_functions.trigamma)
+# digamma = np.vectorize(gamma_functions.digamma)
+# trigamma = np.vectorize(gamma_functions.trigamma)
+from scipy.special import digamma, polygamma
 
+# La fonction trigamma est mathématiquement la 1ère dérivée de digamma (polygamma d'ordre 1)
+def trigamma(x):
+    return polygamma(1, x)
 
 def bcpnn(
     container,
