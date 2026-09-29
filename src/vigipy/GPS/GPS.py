@@ -32,7 +32,7 @@ def gps(
     min_events=4,
     truncate=False,
     maxiter=500,
-    criterion= "EB05>=2"
+    criterion= "EB05>=2",
     n_jobs = -1,
 ):
     """
