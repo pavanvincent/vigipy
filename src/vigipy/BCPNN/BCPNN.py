@@ -91,44 +91,64 @@ def bcpnn(
         upper_bound = []
         IC = []
         relative_risk=1
-        # for m in range(num_cell):
-        #    alpha = [g11[m], g10[m], g01[m], g00[m]]
-        #    p = np.random.dirichlet(alpha, int(num_MC))
-        #   p11 = p[:, 0]
-        #    p1_ = p11 + p[:, 1]
-        #    p_1 = p11 + p[:, 2]
-        #    ic_monte = np.log2(p11 / (p1_ * p_1))
-        #    ic_monte = np.sort(ic_monte)
-        #    temp = 1 * (ic_monte < np.log2(relative_risk))
-        #    posterior_prob.append(sum(temp) / num_MC)
-        #    IC.append(ic_monte[round(num_MC * 0.50)])    
-        #    lower_bound.append(ic_monte[round(num_MC * 0.025)]) 
-        #    upper_bound.append(ic_monte[round(num_MC * 0.975)])
-        #posterior_prob = np.asarray(posterior_prob)
-        #IC = np.asarray(IC)
-        #lower_bound = np.asarray(lower_bound)
-        #upper_bound = np.asarray(upper_bound)
-        gamma11 = np.random.gamma(g11[:, np.newaxis], 1.0, size=(num_cell, num_MC))
-        gamma10 = np.random.gamma(g10[:, np.newaxis], 1.0, size=(num_cell, num_MC))
-        gamma01 = np.random.gamma(g01[:, np.newaxis], 1.0, size=(num_cell, num_MC))
-        gamma00 = np.random.gamma(g00[:, np.newaxis], 1.0, size=(num_cell, num_MC))
+
         
-        total_gamma = gamma11 + gamma10 + gamma01 + gamma00
+        # gamma11 = np.random.gamma(g11[:, np.newaxis], 1.0, size=(num_cell, num_MC))
+        # gamma10 = np.random.gamma(g10[:, np.newaxis], 1.0, size=(num_cell, num_MC))
+        # gamma01 = np.random.gamma(g01[:, np.newaxis], 1.0, size=(num_cell, num_MC))
+        # gamma00 = np.random.gamma(g00[:, np.newaxis], 1.0, size=(num_cell, num_MC))
         
-        p11 = gamma11 / total_gamma
-        p1_ = (gamma11 + gamma10) / total_gamma
-        p_1 = (gamma11 + gamma01) / total_gamma
+        # total_gamma = gamma11 + gamma10 + gamma01 + gamma00
         
-        del gamma11, gamma10, gamma01, gamma00, total_gamma # Libération immédiate de la RAM
+        # p11 = gamma11 / total_gamma
+        # p1_ = (gamma11 + gamma10) / total_gamma
+        # p_1 = (gamma11 + gamma01) / total_gamma
         
-        ic_monte = np.log2(p11 / (p1_ * p_1))
-        del p11, p1_, p_1
+        # del gamma11, gamma10, gamma01, gamma00, total_gamma # Libération immédiate de la RAM
+        
+        # ic_monte = np.log2(p11 / (p1_ * p_1))
+        # del p11, p1_, p_1
 
         # Extraction ultra-rapide des percentiles sans tri global
-        posterior_prob = np.mean(ic_monte < 0.0, axis=1) # log2(1) = 0.0
-        IC = np.percentile(ic_monte, 50.0, axis=1)
-        lower_bound = np.percentile(ic_monte, 2.5, axis=1)
-        upper_bound = np.percentile(ic_monte, 97.5, axis=1)
+        # posterior_prob = np.mean(ic_monte < 0.0, axis=1) # log2(1) = 0.0
+        # IC = np.percentile(ic_monte, 50.0, axis=1)
+        #lower_bound = np.percentile(ic_monte, 2.5, axis=1)
+        # upper_bound = np.percentile(ic_monte, 97.5, axis=1)
+
+        # Taille du bloc adaptable. 2000 est idéal pour la RAM de Google Colab
+        chunk_size = 2000  
+        
+        for i in range(0, num_cell, chunk_size):
+            # Sélection du bloc de lignes courant
+            end = min(i + chunk_size, num_cell)
+            n_chunk = end - i
+            
+            # Simulation Dirichlet via lois Gamma UNIQUEMENT pour ce bloc
+            gamma11 = np.random.gamma(g11[i:end, np.newaxis], 1.0, size=(n_chunk, num_MC))
+            gamma10 = np.random.gamma(g10[i:end, np.newaxis], 1.0, size=(n_chunk, num_MC))
+            gamma01 = np.random.gamma(g01[i:end, np.newaxis], 1.0, size=(n_chunk, num_MC))
+            gamma00 = np.random.gamma(g00[i:end, np.newaxis], 1.0, size=(n_chunk, num_MC))
+            
+            total_gamma = gamma11 + gamma10 + gamma01 + gamma00
+            
+            p11 = gamma11 / total_gamma
+            p1_ = (gamma11 + gamma10) / total_gamma
+            p_1 = (gamma11 + gamma01) / total_gamma
+            
+            # Libération immédiate des variables intermédiaires du bloc
+            del gamma11, gamma10, gamma01, gamma00, total_gamma
+            
+            ic_monte = np.log2(p11 / (p1_ * p_1))
+            del p11, p1_, p_1
+            
+            # Calcul et stockage des statistiques pour ce bloc
+            posterior_prob[i:end] = np.mean(ic_monte < 0.0, axis=1)
+            IC[i:end] = np.percentile(ic_monte, 50.0, axis=1)
+            lower_bound[i:end] = np.percentile(ic_monte, 2.5, axis=1)
+            upper_bound[i:end] = np.percentile(ic_monte, 97.5, axis=1)
+            
+            # Nettoyage de la matrice principale de l'itération
+            del ic_monte
     
     #-------------------------------
     # Compute FDR, FNR, Se and Sp
