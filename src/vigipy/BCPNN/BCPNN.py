@@ -86,10 +86,14 @@ def bcpnn(
         g01 = (q0j * qi1 * a_) + n01
         g00 = (q0j * qi0 * a_) + n00
 
-        posterior_prob = []
-        lower_bound = []
-        upper_bound = []
-        IC = []
+        # posterior_prob = []
+        # lower_bound = []
+        # upper_bound = []
+        # IC = []
+        posterior_prob = np.empty(num_cell, dtype=np.float64)
+        IC = np.empty(num_cell, dtype=np.float64)
+        lower_bound = np.empty(num_cell, dtype=np.float64)
+        upper_bound = np.empty(num_cell, dtype=np.float64)
         relative_risk=1
 
         
