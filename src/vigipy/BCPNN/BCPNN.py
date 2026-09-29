@@ -4,7 +4,7 @@ from scipy.stats import norm
 from scipy.special import digamma, polygamma
 from ..utils import Container
 
-# La fonction trigamma est mathématiquement la 1ère dérivée de digamma (polygamma d'ordre 1)
+# The trigamma function is mathematically the first derivative of digamma (first-order polygamma).
 def trigamma(x):
     return polygamma(1, x)
 
@@ -73,7 +73,7 @@ def bcpnn(
         lower_bound = norm.ppf(0.025, IC, np.sqrt(IC_variance))
         upper_bound = norm.ppf(0.975, IC, np.sqrt(IC_variance))
     else:
-        # Priors vectorisés (calcul direct en une seule étape)
+        # Vectorized priors (direct one-step computation)
         q1j = (n1j + 0.5) / (N + 1)
         qi1 = (ni1 + 0.5) / (N + 1)
         qi0 = (N - ni1 + 0.5) / (N + 1)
@@ -92,15 +92,16 @@ def bcpnn(
         upper_bound = np.empty(num_cell, dtype=np.float64)
         relative_risk=1
 
-        # Taille du bloc adaptable. 2000 est idéal pour la RAM de Google Colab
+        # Adjustable block size. 2000 is ideal for RAM
+        #---------------------------------------------
         chunk_size = 2000  
         
         for i in range(0, num_cell, chunk_size):
-            # Sélection du bloc de lignes courant
+            # Selecting the current line block
             end = min(i + chunk_size, num_cell)
             n_chunk = end - i
             
-            # Simulation Dirichlet via lois Gamma UNIQUEMENT pour ce bloc
+            # Dirichlet simulation via Gamma laws ONLY for this block
             gamma11 = np.random.gamma(g11[i:end, np.newaxis], 1.0, size=(n_chunk, num_MC))
             gamma10 = np.random.gamma(g10[i:end, np.newaxis], 1.0, size=(n_chunk, num_MC))
             gamma01 = np.random.gamma(g01[i:end, np.newaxis], 1.0, size=(n_chunk, num_MC))
@@ -112,24 +113,20 @@ def bcpnn(
             p1_ = (gamma11 + gamma10) / total_gamma
             p_1 = (gamma11 + gamma01) / total_gamma
             
-            # Libération immédiate des variables intermédiaires du bloc
+            # Immediate release of intermediate variables from the block
             del gamma11, gamma10, gamma01, gamma00, total_gamma
             
             ic_monte = np.log2(p11 / (p1_ * p_1))
             del p11, p1_, p_1
             
-            # Calcul et stockage des statistiques pour ce bloc
-            # posterior_prob[i:end] = np.mean(ic_monte < 0.0, axis=1)
-            # IC[i:end] = np.percentile(ic_monte, 50.0, axis=1)
-            # lower_bound[i:end] = np.percentile(ic_monte, 2.5, axis=1)
-            # upper_bound[i:end] = np.percentile(ic_monte, 97.5, axis=1)
-            # --- APPEL DU KERNEL PARALLÉLISÉ NUMBA ---
-            # Cette seule ligne remplace la boucle de chunking et s'exécute en parallèle C
+            # Calculation and storage of statistics for this block
+            #  UMBA PARALLELIZED KERNEL CALL
+            #--------------------------------------------------------
             posterior_prob, IC, lower_bound, upper_bound = _bcpnn_numba_kernel(
             g11, g10, g01, g00, num_MC
             )
             
-            # Nettoyage de la matrice principale de l'itération
+            # Cleaning the main matrix of the iteration
             del ic_monte
     
     #-------------------------------
@@ -225,18 +222,18 @@ from numba import njit, prange
 def _bcpnn_numba_kernel(g11, g10, g01, g00, num_MC):
     num_cell = len(g11)
     
-    # Pré-allocation des résultats finaux (un élément par cellule)
+    # Pre-allocation of final results (one element per cell)
     posterior_prob = np.empty(num_cell, dtype=np.float64)
     IC = np.empty(num_cell, dtype=np.float64)
     lower_bound = np.empty(num_cell, dtype=np.float64)
     upper_bound = np.empty(num_cell, dtype=np.float64)
     
-    # 'prange' indique à Numba de paralléliser cette boucle sur tous les cœurs CPU
+    # 'prange' tells Numba to parallelize this loop across all CPU cores
     for m in prange(num_cell):
-        # Tableau local à chaque thread pour stocker les tirages de la cellule courante
+        # Local array for each thread to store the draws of the current cell
         ic_monte = np.empty(num_MC, dtype=np.float64)
         
-        # Simulation Monte Carlo pour la cellule 'm'
+        # Monte Carlo simulation for cell 'm'
         for i in range(num_MC):
             # Tirage de lois Gamma thread-safe
             gamma11 = np.random.gamma(g11[m], 1.0)
@@ -250,16 +247,16 @@ def _bcpnn_numba_kernel(g11, g10, g01, g00, num_MC):
             p1_ = (gamma11 + gamma10) / total
             p_1 = (gamma11 + gamma01) / total
             
-            # Évite une division par zéro si les probabilités sont nulles
+            # Avoid division by zero if the probabilities are zero
             if p1_ * p_1 > 0 and p11 > 0:
                 ic_monte[i] = np.log2(p11 / (p1_ * p_1))
             else:
-                ic_monte[i] = -np.inf # Équivalent numérique d'une valeur impossible
+                ic_monte[i] = -np.inf # Numerical equivalent of an impossible value
         
-        # Tri rapide local (fortement optimisé par Numba)
+        # Local rapid sorting (highly optimized by Numba)
         ic_monte.sort()
         
-        # Calcul de la probabilité a posteriori (ic_monte < 0.0)
+        # Calculation of the posterior probability (ic_monte < 0.0)
         under_zero = 0
         for i in range(num_MC):
             if ic_monte[i] < 0.0:
@@ -267,7 +264,7 @@ def _bcpnn_numba_kernel(g11, g10, g01, g00, num_MC):
                 
         posterior_prob[m] = under_zero / num_MC
         
-        # Extraction des percentiles directement sur le tableau trié
+        # Extracting percentiles directly from the sorted table
         IC[m] = ic_monte[int(round(num_MC * 0.50))]
         lower_bound[m] = ic_monte[int(round(num_MC * 0.025))]
         upper_bound[m] = ic_monte[int(round(num_MC * 0.975))]
