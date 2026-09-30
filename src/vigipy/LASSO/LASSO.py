@@ -259,34 +259,19 @@ def lasso(
     use_glm=False,
     nb_alpha=1,
     lasso_alpha=1e-9,
-    n_jobs=-1,
+    n_jobs=-1,  # Ajout du contrôle des cœurs pour la parallélisation
 ):
     # Sauvegarde des paramètres d'entrée
     input_params = locals().copy()
     del input_params["container"]
 
-    # --- ADAPTATION DES ATTRIBUTS DU CONTAINER VIGIPY ---
-    # On cherche où sont stockés les produits (X) et les effets indésirables (ys)
-    if hasattr(container, "X") and hasattr(container, "y"):
-        X = container.X
-        ys = container.y
-    elif hasattr(container, "drugs") and hasattr(container, "adr"):
-        X = container.drugs
-        ys = container.adr
-    elif hasattr(container, "matrix_drugs") and hasattr(container, "matrix_adr"):
-        X = container.matrix_drugs
-        ys = container.matrix_adr
-    else:
-        # Si VIGIPY utilise un dictionnaire ou une structure générique dans .data
-        raise AttributeError(
-            "L'objet 'container' ne possède pas d'attributs reconnus pour les produits et événements "
-            "(ex: .X/.y, .drugs/.adr). Veuillez vérifier la structure de votre classe Container."
-        )
-    # ----------------------------------------------------
+    X = container.product_features
+    ys = container.event_outcomes
 
-    # Optimisation Mémoire : Conversion automatique en matrice creuse CSR si pertinent
+    # 1. Optimisation Mémoire : Conversion automatique en matrice creuse CSR si pertinent
     if isinstance(X, pd.DataFrame):
         product_names = X.columns.tolist()
+        # On passe en CSR si la matrice contient beaucoup de zéros
         if (X.values == 0).mean() > 0.5:
             X_matrix = csr_matrix(X.values)
         else:
@@ -294,13 +279,6 @@ def lasso(
     else:
         product_names = [f"P{i}" for i in range(X.shape[1])]
         X_matrix = X
-
-    if isinstance(ys, pd.DataFrame):
-        columns = ys.columns.tolist()
-        ys_df = ys
-    else:
-        columns = [f"E{i}" for i in range(ys.shape[1])]
-        ys_df = pd.DataFrame(ys, columns=columns)
 
     if lasso_kwargs is None:
         lasso_kwargs = dict()
@@ -315,11 +293,14 @@ def lasso(
         else:
             base_lasso = Lasso(alpha=alpha, **lasso_kwargs)
 
-    # Parallélisation avec Joblib
+    # Extract colonnes et données cibles
+    columns = ys.columns.tolist()
+
+    # 2. Parallélisation avec Joblib
     results_parallel = Parallel(n_jobs=n_jobs)(
         delayed(_process_single_column)(
             col,
-            ys_df[col].values,
+            ys[col].values,
             X_matrix,
             product_names,
             min_events,
@@ -337,7 +318,7 @@ def lasso(
         for col in columns
     )
 
-    # Reconstruction ultra-rapide des listes
+    # 3. Reconstruction ultra-rapide des listes (Évite les millions de .append())
     res_product = []
     res_ae = []
     res_coef = []
@@ -372,3 +353,4 @@ def lasso(
     RES.num_signals = len(RES.signals)
 
     return RES
+
