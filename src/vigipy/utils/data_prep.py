@@ -7,51 +7,6 @@ import polars as pl
 from .Container import Container
 
 
-# def convert(
-#    data_frame,
-#    margin_threshold=1,
-#    product_label="name",
-#    count_label="count",
-#    ae_label="AE",
-#):
-#    """
-#    Convert a Pandas dataframe object into a container class for use
-#    with the disproportionality analyses. Column names in the DataFrame
-#    must include or be specified in the arguments:
-#        "name" -- A brand/generic name for the product. This module
-#                    expects that you have already cleaned the data
-#                    so there is only one name associated with a class.
-#        "AE" -- The adverse event(s) associated with a drug/device.
-#        "count" -- The number of AEs associated with that drug/device
-#                    and AE. You can input a sheet with single counts
-#                    (i.e. duplicate rows) or pre-aggregated counts.
-#
-#    Arguments:
-#        data_frame (Pandas DataFrame): The Pandas DataFrame object
-#
-#        margin_threshold (int): The threshold for counts. Lower numbers will
-#                             be removed from consideration
-#
-#    Returns:
-#        RES (DataStorage object): A container object that holds the necessary
-#                                    components for DA.
-#
-#    """
-#    data_cont = compute_contingency(data_frame, product_label, count_label, ae_label, margin_threshold)
-#    col_sums = np.sum(data_cont, axis=0)
-#    row_sums = np.sum(data_cont, axis=1)
-#
-#    # Compute the flattened table from the contingency table.
-#    data_df = count(data_cont, row_sums, col_sums)
-#
-#    # Initialize the container object and assign the data
-#    DC = Container()
-#    DC.contingency = data_cont
-#    DC.data = data_df
-#    DC.N = data_df["events"].sum()
-#    DC.type = "contingency"
-#    return DC
-
 def convert(
     data_frame,
     margin_threshold=1,
