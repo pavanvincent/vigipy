@@ -46,32 +46,34 @@ class LongitudinalModel:
             return (timestamp, None) if include_gaps else None
 
     def run_disjoint(self, model, include_gaps=True, conversion_type="base", conversion_kwargs=None, start_date=None, end_date=None, **kwargs):
-        """Sequential version: Extraction of upstream data filtered over an interval [start_date, end_date]"""
-        # 1. The data is extracted statically
-        counts = self.date_groups.sum()["count"]
-        # group_data = [(timestamp, self.data.loc[idx]) for timestamp, idx in self.date_groups.groups.items()]
-        group_data = [(timestamp, self.date_groups.get_group(timestamp)) for timestamp in self.date_groups.groups.keys()]
-        
-        # Filtering by start_date and end_date
-        if start_date is not None:
-            start_ts = pd.to_datetime(start_date)
-            group_data = [(ts, sub) for ts, sub in group_data if ts >= start_ts]
-            
-        if end_date is not None:
-            end_ts = pd.to_datetime(end_date)
-            group_data = [(ts, sub) for ts, sub in group_data if ts <= end_ts]
-        
-        # 2. Simple sequential execution
-        raw_results = []
-        for timestamp, subset in group_data:
-            res = self._execute_disjoint_task(
-                timestamp, subset, counts.get(timestamp, 0), model, include_gaps, conversion_type, conversion_kwargs, **kwargs
-            )
-            raw_results.append(res)
-        
-        self.results = [res for res in raw_results if res is not None]
-        return self.results
+    """Sequential version: Extraction of upstream data filtered over an interval [start_date, end_date]"""
+    # 1. Sécurisation de conversion_kwargs contre l'erreur d'ambiguïté DataFrame
+    if conversion_kwargs is None:
+        conversion_kwargs = {}
 
+    # 2. Extraction sécurisée des groupes via get_group() (évite le KeyError sur l'index)
+    counts = self.date_groups.sum()["count"]
+    group_data = [(timestamp, self.date_groups.get_group(timestamp)) for timestamp in self.date_groups.groups.keys()]
+    
+    # Filtrage par start_date et end_date
+    if start_date is not None:
+        start_ts = pd.to_datetime(start_date)
+        group_data = [(ts, sub) for ts, sub in group_data if ts >= start_ts]
+        
+    if end_date is not None:
+        end_ts = pd.to_datetime(end_date)
+        group_data = [(ts, sub) for ts, sub in group_data if ts <= end_ts]
+    
+    # 3. Exécution séquentielle avec dépaquetage **kwargs
+    raw_results = []
+    for timestamp, subset in group_data:
+        res = self._execute_disjoint_task(
+            timestamp, subset, counts.get(timestamp, 0), model, include_gaps, conversion_type, conversion_kwargs, **kwargs
+        )
+        raw_results.append(res)
+    
+    self.results = [res for res in raw_results if res is not None]
+    return self.results
     def run(self, model, include_gaps=True, conversion_type="base", conversion_kwargs=None, start_date=None, end_date=None, **kwargs):
         """
         Sequential cumulative version: Allows filtering on an interval [start_date, end_date].
