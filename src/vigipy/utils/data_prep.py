@@ -158,6 +158,9 @@ def convert_binary(
     # Désinfection des données
     data = _sanitize_data(data, [product_label, ae_label, count_label])
 
+    # Nettoyage des NaN pour éviter les codes -1 dans cat.codes et planter SciPy
+    data = data.dropna(subset=[product_label, ae_label]).copy()
+
     # Gestion des comptes (Duplication des lignes si nécessaire)
     if not use_counts and expand_counts and data[count_label].max() > 1:
         # Optimisation radicale de __expand_dataframe via repeat de NumPy
