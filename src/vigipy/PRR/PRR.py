@@ -55,6 +55,7 @@ def prr(
     log_prr = np.log((n11 / (n11 + n10)) / (n01 / (n01 + n00)))
     var_log_prr = 1 / n11 - 1 / (n11 + n10) + 1 / n01 - 1 / (n01 + n00)
     prr = np.exp(log_prr)
+    
     # compute lower and upper bound
     #------------------------------------------------------
     log_LB = norm.ppf(0.025, log_prr, np.sqrt(var_log_prr))
