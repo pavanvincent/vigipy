@@ -65,7 +65,7 @@ class LongitudinalModel:
         raw_results = []
         for timestamp, subset in group_data:
             res = self._execute_disjoint_task(
-                timestamp, subset, counts.get(timestamp, 0), model, include_gaps, conversion_type, conversion_kwargs, kwargs
+                timestamp, subset, counts.get(timestamp, 0), model, include_gaps, conversion_type, conversion_kwargs, **kwargs
             )
             raw_results.append(res)
         
