@@ -98,10 +98,10 @@ def prr(
             "N_{01}": n01,
             "N_{00}": n00,
             "PRR": prr,
-            "LB(CI 95%)" : np.exp(log_LB),
-            "UB(CI 95%)" : ub_exp,
             "Chi2_Yates": chi2_yates,
             "Is_Signal": signal_mask,
+            "LB(CI 95%)" : np.exp(log_LB),
+            "UB(CI 95%)" : ub_exp,
         },
         index=np.arange(len(n11)),
     ).sort_values(by=["PRR","Chi2_Yates"], ascending=False)
