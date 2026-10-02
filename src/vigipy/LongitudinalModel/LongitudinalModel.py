@@ -49,7 +49,8 @@ class LongitudinalModel:
         """Sequential version: Extraction of upstream data filtered over an interval [start_date, end_date]"""
         # 1. The data is extracted statically
         counts = self.date_groups.sum()["count"]
-        group_data = [(timestamp, self.data.loc[idx]) for timestamp, idx in self.date_groups.groups.items()]
+        # group_data = [(timestamp, self.data.loc[idx]) for timestamp, idx in self.date_groups.groups.items()]
+        group_data = [(timestamp, self.date_groups.get_group(timestamp)) for timestamp in self.date_groups.groups.keys()]
         
         # Filtering by start_date and end_date
         if start_date is not None:
