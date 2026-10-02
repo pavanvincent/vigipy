@@ -240,8 +240,17 @@ def _process_single_column(
             indices = boot_indices[b]
             X_bootstrap = X_matrix[indices]
             y_bootstrap = y_values[indices]
+            
+            if hasattr(X_bootstrap, "toarray"):
+                X_bootstrap_fit = X_bootstrap.toarray()
+            elif hasattr(X_bootstrap, "sparse"):
+                X_bootstrap_fit = X_bootstrap.sparse.to_dense()
+            else:
+                X_bootstrap_fit = X_bootstrap
 
-            lasso_model.fit(X_bootstrap, y_bootstrap)
+        # Ajustement du modèle sur le tirage bootstrap
+            lasso_model.fit(X_bootstrap_fit, y_bootstrap)
+            # lasso_model.fit(X_bootstrap, y_bootstrap)
             bootstrap_coefficients[b] = lasso_model.coef_
 
         # Calcul vectorisé des percentiles
