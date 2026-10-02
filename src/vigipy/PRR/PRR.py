@@ -50,11 +50,11 @@ def prr(
     n00 = N - (n11 + n10 + n01)
 
     
-    # compute log(PRR) and VAR(LOG(PRR))
+    # compute log(PRR) and VAR(LOG(PRR)) and prr
     #-------------------------------------------------------------
     log_prr = np.log((n11 / (n11 + n10)) / (n01 / (n01 + n00)))
     var_log_prr = 1 / n11 - 1 / (n11 + n10) + 1 / n01 - 1 / (n01 + n00)
-
+    prr = np.exp(log_prr)
     # compute lower and upper bound
     #------------------------------------------------------
     log_LB = norm.ppf(0.025, log_prr, np.sqrt(var_log_prr))
@@ -80,7 +80,7 @@ def prr(
 
     # Define signal criteria mask: N_11 >= 3 AND Chi2 >= 4 AND PRR >= 2
     #-------------------------------------------------------------------
-    signal_mask = (n11 >= 3) & (chi2_yates >= 4) & (prr_val >= 2)
+    signal_mask = (n11 >= 3) & (chi2_yates >= 4) & (prr >= 2)
     num_signals = signal_mask.sum()
 
    
@@ -96,7 +96,7 @@ def prr(
             "N_{10}": n10,
             "N_{01}": n01,
             "N_{00}": n00,
-            "PRR": np.exp(log_prr),
+            "PRR": prr,
             "LB(CI 95%)" : np.exp(log_LB),
             "UB(CI 95%)" : ub_exp,
             "Chi2_Yates": chi2_yates,
