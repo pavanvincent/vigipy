@@ -185,11 +185,12 @@ def _process_single_column(
     alpha,
     nb_alpha,
     lasso_alpha,
+    use_bootstrap,  # Nouveau paramètre
     num_bootstrap,
     ci,
     base_lasso,
 ):
-    """Calcule les coefficients et bootstrap pour une seule colonne en parallèle."""
+    """Calcule les coefficients et optionnellement le bootstrap pour une seule colonne en parallèle."""
     y_sum = y_values.sum()
     n_products = X_matrix.shape[1]
     n_samples = X_matrix.shape[0]
@@ -219,7 +220,7 @@ def _process_single_column(
         ci_lower = np.zeros(n_products)
         ci_upper = np.zeros(n_products)
     else:
-        # lasso_model.fit(X_matrix, y_values)
+        # Conversion si matrice creuse
         if hasattr(X_matrix, "toarray"):
             X_matrix_fit = X_matrix.toarray()
         elif hasattr(X_matrix, "sparse"):
@@ -230,34 +231,39 @@ def _process_single_column(
         lasso_model.fit(X_matrix_fit, y_values)
         all_coefs = lasso_model.coef_
 
-        # Pré-génération de tous les indices de bootstrap d'un coup (accélère le tirage)
-        boot_indices = np.random.choice(
-            n_samples, size=(num_bootstrap, n_samples), replace=True
-        )
-        bootstrap_coefficients = np.empty((num_bootstrap, n_products))
+        # Conditionnement du bootstrap
+        if use_bootstrap and num_bootstrap > 0:
+            # Pré-génération de tous les indices de bootstrap d'un coup
+            boot_indices = np.random.choice(
+                n_samples, size=(num_bootstrap, n_samples), replace=True
+            )
+            bootstrap_coefficients = np.empty((num_bootstrap, n_products))
 
-        for b in range(num_bootstrap):
-            indices = boot_indices[b]
-            X_bootstrap = X_matrix[indices]
-            y_bootstrap = y_values[indices]
-            
-            if hasattr(X_bootstrap, "toarray"):
-                X_bootstrap_fit = X_bootstrap.toarray()
-            elif hasattr(X_bootstrap, "sparse"):
-                X_bootstrap_fit = X_bootstrap.sparse.to_dense()
-            else:
-                X_bootstrap_fit = X_bootstrap
+            for b in range(num_bootstrap):
+                indices = boot_indices[b]
+                X_bootstrap = X_matrix[indices]
+                y_bootstrap = y_values[indices]
+                
+                if hasattr(X_bootstrap, "toarray"):
+                    X_bootstrap_fit = X_bootstrap.toarray()
+                elif hasattr(X_bootstrap, "sparse"):
+                    X_bootstrap_fit = X_bootstrap.sparse.to_dense()
+                else:
+                    X_bootstrap_fit = X_bootstrap
 
-        # Ajustement du modèle sur le tirage bootstrap
-            lasso_model.fit(X_bootstrap_fit, y_bootstrap)
-            # lasso_model.fit(X_bootstrap, y_bootstrap)
-            bootstrap_coefficients[b] = lasso_model.coef_
+                # Ajustement du modèle sur le tirage bootstrap
+                lasso_model.fit(X_bootstrap_fit, y_bootstrap)
+                bootstrap_coefficients[b] = lasso_model.coef_
 
-        # Calcul vectorisé des percentiles
-        ci_lower = np.percentile(bootstrap_coefficients, (100 - ci) / 2.0, axis=0)
-        ci_upper = np.percentile(
-            bootstrap_coefficients, 100 - (100 - ci) / 2.0, axis=0
-        )
+            # Calcul vectorisé des percentiles
+            ci_lower = np.percentile(bootstrap_coefficients, (100 - ci) / 2.0, axis=0)
+            ci_upper = np.percentile(
+                bootstrap_coefficients, 100 - (100 - ci) / 2.0, axis=0
+            )
+        else:
+            # Si pas de bootstrap, les intervalles ne sont pas calculés (remplis de 0)
+            ci_lower = np.zeros(n_products)
+            ci_upper = np.zeros(n_products)
 
     return product_names, [column] * n_products, all_coefs, ci_lower, ci_upper
 
@@ -267,6 +273,7 @@ def lasso(
     lasso_thresh=0,
     alpha=0.5,
     min_events=3,
+    use_bootstrap=False,  # Nouveau paramètre (False par défaut)
     num_bootstrap=10,
     ci=95,
     use_lars=False,
@@ -276,7 +283,7 @@ def lasso(
     use_glm=False,
     nb_alpha=1,
     lasso_alpha=1e-9,
-    n_jobs=-1,  # Ajout du contrôle des cœurs pour la parallélisation
+    n_jobs=-1,  # Contrôle des cœurs pour la parallélisation
 ):
     # Sauvegarde des paramètres d'entrée
     input_params = locals().copy()
@@ -288,7 +295,6 @@ def lasso(
     # 1. Optimisation Mémoire : Conversion automatique en matrice creuse CSR si pertinent
     if isinstance(X, pd.DataFrame):
         product_names = X.columns.tolist()
-        # On passe en CSR si la matrice contient beaucoup de zéros
         if (X.values == 0).mean() > 0.5:
             X_matrix = csr_matrix(X.values)
         else:
@@ -328,6 +334,7 @@ def lasso(
             alpha,
             nb_alpha,
             lasso_alpha,
+            use_bootstrap,  # Transmission de l'argument
             num_bootstrap,
             ci,
             base_lasso,
@@ -335,7 +342,7 @@ def lasso(
         for col in columns
     )
 
-    # 3. Reconstruction ultra-rapide des listes (Évite les millions de .append())
+    # 3. Reconstruction des résultats
     res_product = []
     res_ae = []
     res_coef = []
@@ -353,7 +360,7 @@ def lasso(
     RES = Container(params=True)
     RES.param = input_params
 
-    # Création du DataFrame en une seule fois (Vectorisé)
+    # Création du DataFrame
     RES.all_signals = pd.DataFrame(
         {
             "Product": res_product,
