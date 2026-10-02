@@ -127,7 +127,7 @@ class LongitudinalModel:
         raw_results = []
         for timestamp, end_idx in zip(timestamps, end_indices):
             res = self._execute_disjoint_task(
-                timestamp, end_idx, model, include_gaps, conversion_type, conversion_kwargs, kwargs
+                timestamp, end_idx, model, include_gaps, conversion_type, conversion_kwargs, **kwargs
             )
             raw_results.append(res)
         
