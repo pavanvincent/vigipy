@@ -44,7 +44,8 @@ class LongitudinalModel:
             
         except ValueError:
             return (timestamp, None) if include_gaps else None
-
+    
+    
     def run_disjoint(self, model, include_gaps=True, conversion_type="base", conversion_kwargs=None, start_date=None, end_date=None, **kwargs):
     """Sequential version: Extraction of upstream data filtered over an interval [start_date, end_date]"""
     # 1. Sécurisation de conversion_kwargs contre l'erreur d'ambiguïté DataFrame
