@@ -29,55 +29,81 @@ class LongitudinalModel:
             return convert_multi_item(data, **conversion_kwargs)
 
 
-    def _execute_disjoint_task(self, timestamp, end_idx, model, include_gaps, conversion_type, conversion_kwargs, kwargs):
-        # If no record exists up to that date
-        if end_idx == 0:
-            return (timestamp, None) if include_gaps else None
-            
+    def _execute_disjoint_task(
+        self,
+        timestamp,
+        subset_or_idx,
+        model,
+        include_gaps,
+        conversion_type,
+        conversion_kwargs,
+        **kwargs
+    ):
+        # Sécurisation si subset_or_idx est un entier (end_idx) ou un DataFrame
+        if isinstance(subset_or_idx, (int, float, np.integer)):
+            if subset_or_idx == 0:
+                return (timestamp, None) if include_gaps else None
+            subset = self.data.iloc[:int(subset_or_idx)]
+        else:
+            # Si un DataFrame est transmis
+            if subset_or_idx is None or subset_or_idx.empty:
+                return (timestamp, None) if include_gaps else None
+            subset = subset_or_idx
+
         try:
-            # Positional slicing (.iloc) is virtual and instantaneous here.
-            subset = self.data.iloc[:end_idx]
-            
             sub_container = self._convert(subset, conversion_type, conversion_kwargs)
             da_results = model(sub_container, **kwargs)
             return (timestamp, da_results)
-            
+
         except ValueError:
             return (timestamp, None) if include_gaps else None
-    
-    
-    def run_disjoint(self, model, include_gaps=True, conversion_type="base", conversion_kwargs=None, start_date=None, end_date=None, **kwargs):
-        """
-            Sequential version: Extraction of upstream data filtered over an interval [start_date, end_date]
-        """
-        # 1. Sécurisation de conversion_kwargs contre l'erreur d'ambiguïté DataFrame
+
+
+    def run_disjoint(
+        self,
+        model,
+        include_gaps=True,
+        conversion_type="base",
+        conversion_kwargs=None,
+        start_date=None,
+        end_date=None,
+        **kwargs
+    ):
+        """Sequential version: Extraction of upstream data filtered over an interval [start_date, end_date]"""
         if conversion_kwargs is None:
             conversion_kwargs = {}
 
-        # 2. Extraction sécurisée des groupes via get_group() (évite le KeyError sur l'index)
-        counts = self.date_groups.sum()["count"]
-        group_data = [(timestamp, self.date_groups.get_group(timestamp)) for timestamp in self.date_groups.groups.keys()]
-    
+        # Extraction des sous-ensembles par groupe de date
+        group_data = [
+            (timestamp, self.date_groups.get_group(timestamp))
+            for timestamp in self.date_groups.groups.keys()
+        ]
+
         # Filtrage par start_date et end_date
         if start_date is not None:
             start_ts = pd.to_datetime(start_date)
             group_data = [(ts, sub) for ts, sub in group_data if ts >= start_ts]
-        
+
         if end_date is not None:
             end_ts = pd.to_datetime(end_date)
             group_data = [(ts, sub) for ts, sub in group_data if ts <= end_ts]
-    
-        # 3. Exécution séquentielle avec dépaquetage **kwargs
+
+        # Exécution séquentielle
         raw_results = []
         for timestamp, subset in group_data:
             res = self._execute_disjoint_task(
-                timestamp, subset, counts.get(timestamp, 0), model, include_gaps, conversion_type, conversion_kwargs, **kwargs
+                timestamp,
+                subset,
+                model,
+                include_gaps,
+                conversion_type,
+                conversion_kwargs,
+                **kwargs
             )
             raw_results.append(res)
-    
+
         self.results = [res for res in raw_results if res is not None]
         return self.results
-
     
     def run(self, model, include_gaps=True, conversion_type="base", conversion_kwargs=None, start_date=None, end_date=None, **kwargs):
         """
