@@ -74,6 +74,8 @@ class LongitudinalModel:
     
     self.results = [res for res in raw_results if res is not None]
     return self.results
+
+    
     def run(self, model, include_gaps=True, conversion_type="base", conversion_kwargs=None, start_date=None, end_date=None, **kwargs):
         """
         Sequential cumulative version: Allows filtering on an interval [start_date, end_date].
