@@ -219,7 +219,15 @@ def _process_single_column(
         ci_lower = np.zeros(n_products)
         ci_upper = np.zeros(n_products)
     else:
-        lasso_model.fit(X_matrix, y_values)
+        # lasso_model.fit(X_matrix, y_values)
+        if hasattr(X_matrix, "toarray"):
+            X_matrix_fit = X_matrix.toarray()
+        elif hasattr(X_matrix, "sparse"):
+            X_matrix_fit = X_matrix.sparse.to_dense()
+        else:
+            X_matrix_fit = X_matrix
+        
+        lasso_model.fit(X_matrix_fit, y_values)
         all_coefs = lasso_model.coef_
 
         # Pré-génération de tous les indices de bootstrap d'un coup (accélère le tirage)
