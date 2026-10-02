@@ -12,7 +12,6 @@ def prr(
    Calculate the Proportional Reporting Ratio (PRR):
     - Confidence Intervalle [LB, UP] at 95% estimated using Woolf method 
     - Alert Signal accord Evans criterion: (PRR >=2) & (Chi2_yates >=4) & (n11 >= 3)
-    - p-value computed using Wald unilateral test
     
     Arguments:
     
@@ -26,7 +25,6 @@ def prr(
         product name, adverse event
         N_00, N_01, N_10, N_11,
         PRR, LB, UP,
-        p-value,
         chi2_yates,
         is_signal,
         number of signals
