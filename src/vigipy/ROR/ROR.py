@@ -43,7 +43,7 @@ def ror(
     ni1 = np.asarray(DATA["count_across_brands"], dtype=np.float64)
     num_cell = len(n11)
    
-    n10 = n1j - n11
+    n10 = n1j - n11 + 1e-7
     n01 = ni1 - n11 + 1e-7
     n00 = N - (n11 + n10 + n01)
 
