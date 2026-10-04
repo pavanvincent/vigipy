@@ -11,7 +11,7 @@ def ror(
     """
     Calculate the reporting odds ratio (ROR):
     - Confidence Intervalle [LB, UP] at 95% estimated using Woolf method 
-    - Alert Signal if log(LB) > 0
+    - Signal Detection Rate (SDR) if log(LB) > 0
     - p-value computed using Wald unilateral test
     
     Arguments:
