@@ -495,7 +495,7 @@ def gps(
         AnalysisResult containing detected signals, all evaluated pairs, signal count,
         and model parameters.
     """
-   relative_risk = 1.0
+    relative_risk = 1.0
     decision_metric = "rank"
     decision_thres = 0.05
     ranking_statistic = "log2"
@@ -507,8 +507,6 @@ def gps(
     minimization_method = "SLSQP"
     minimization_bounds = ((EPS, 20), (EPS, 10), (EPS, 20), (EPS, 10), (0, 1))
     minimization_options = None
-
-
 
     
     if prior_init is None:
