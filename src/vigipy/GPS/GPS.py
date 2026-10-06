@@ -539,16 +539,6 @@ def gps(
         "minimization_method": minimization_method,
     }
 
-    computation_params = pd.DataFrame.from_dict({
-        "minimization_method": minimization_method,
-        "minimization_bounds": minimization_bounds,
-        "priori_init": priors,
-        "method_alpha": method_alpha,
-        "expected_method": expected_method,
-        "minimization_options": minimization_options
-        }, orient="index", columns=["Value"])
-
-
     priors = np.asarray(
         [
             prior_init["alpha1"],
@@ -582,6 +572,16 @@ def gps(
         )
     else:
         priors = np.asarray(prior_param, dtype=np.float64)
+
+    computation_params = pd.DataFrame.from_dict({
+        "minimization_method": minimization_method,
+        "minimization_bounds": minimization_bounds,
+        "priori_init": priors,
+        "method_alpha": method_alpha,
+        "expected_method": expected_method,
+        "minimization_options": minimization_options
+        }, orient="index", columns=["Value"])
+
 
     if min_events > 1:
         mask = n11 >= min_events
@@ -668,6 +668,7 @@ def gps(
             "N_{10}": n10,
             "N_{01}": n01,
             "N_{00}": n00,
+            "p_{H0}": posterior_probability,
         }
     )
     
