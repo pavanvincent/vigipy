@@ -582,9 +582,14 @@ def gps(
         ni1 = ni1[n11 >= min_events]
         n11 = n11[n11 >= min_events]
 
+    n10 = n1j - n11
+    n01 = ni1 - n11
+    n00 = N - (n11 + n10 + n01)
+
     num_cell = len(n11)
 
     # Posterior probability of the null hypothesis
+    #------------------------------------------------
     _p_post1 = np.clip(priors[1] / (priors[1] + expected + 1e-10), 1e-10, 1.0 - 1e-10)
     _p_post2 = np.clip(priors[3] / (priors[3] + expected + 1e-10), 1e-10, 1.0 - 1e-10)
     gammaln_n11_1_post = gammaln(n11 + 1.0)
@@ -609,7 +614,8 @@ def gps(
     ebgm = np.power(2.0, np.asarray(EBlog2, dtype=np.float64))
 
     # Calculation of the Lower Bound (EB05) and Upper Bound (EB95)
-    LB = quantiles(
+    #--------------------------------------------------------------
+    EB05 = quantiles(
         0.05,
         Qn,
         priors[0] + n11,
@@ -617,7 +623,7 @@ def gps(
         priors[2] + n11,
         priors[3] + expected,
     )
-    UB = quantiles(
+    EB95 = quantiles(
         0.95,
         Qn,
         priors[0] + n11,
@@ -688,8 +694,8 @@ def gps(
             "Product": name,
             "Adverse Event": ae,
             "EBGM": ebgm,
-            "EB05" : LB05,
-            "EB95" : UB95,
+            "EB05" : EB05,
+            "EB95" : EB95,
             "p_{H0}": p_h0,
             "N_{11}": n11,
             "N_{10}": n10,
