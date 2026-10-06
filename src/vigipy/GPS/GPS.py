@@ -220,7 +220,7 @@ def gps(
         priors[1] + expected,
         priors[2] + n11,
         priors[3] + expected,
-        n_jobs = n_jobs,
+        # n_jobs = n_jobs,
     )
 
     #-------------------------------------------------------------------------
@@ -233,7 +233,7 @@ def gps(
         priors[1] + expected,
         priors[2] + n11,
         priors[3] + expected,
-        n_jobs = n_jobs,
+        # n_jobs = n_jobs,
     )
    
     #----------------------------------------------------------------
