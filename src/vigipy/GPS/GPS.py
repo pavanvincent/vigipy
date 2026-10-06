@@ -641,47 +641,6 @@ def gps(
         priors[3] + expected,
     )
 
-    #----------------------------------------------------------------
-    # Compute FDR (False Detection Rate), FNR (False Negative Rate)
-    # Compte Se (sensitivity) and Sp (specificity)
-    #----------------------------------------------------------------
-    
-    # 1. Compute Null (H0) and Alternative (H1) hypothesis probability
-    #----------------------------------------------------------------
-    p_h0 = np.asarray(posterior_probability)  # posterior_probability represents P(H0), the null hypothesis probability
-    p_h1 = 1.0 - p_h0                         # Alternative hypothesis probability (true signal)
-    
-    # 2. Compute total expected masses in the baseline
-    #-------------------------------------------------
-    total_true_signals = np.sum(p_h1)
-    total_true_negatives = np.sum(p_h0)
-    
-    # 3. Cumulative sums from left to right (from highest to lowest signal)
-    #-----------------------------------------------------------------------
-    true_positives_cum = np.cumsum(p_h1)
-    false_positives_cum = np.cumsum(p_h0)
-    post_range = np.arange(1, num_cell + 1)
-    
-    
-    # FDR: proportion of false positives among the k raised alerts
-    #--------------------------------------------------------------
-    FDR = false_positives_cum / post_range
-    
-    # Sensitivity (Se): proportion of captured true signals out of the total available
-    #----------------------------------------------------------------------------------
-    Se = true_positives_cum / (total_true_signals + 1e-7)
-    
-    # FNR: proportion of missed true signals (those remaining to the right of the threshold)
-    # Strictly equivalent to: FNR = 1.0 - Se
-    #----------------------------------------------------------------------------------------
-    missed_true_signals = total_true_signals - true_positives_cum
-    FNR = missed_true_signals / (total_true_signals + 1e-7)
-
-    # Specificity (Sp): proportion of correctly identified true negatives
-    # Those are the true negatives that were NOT raised as alerts (remaining to the right)
-    #---------------------------------------------------------------------------------------
-    true_negatives_remaining = total_true_negatives - false_positives_cum
-    Sp = true_negatives_remaining / (total_true_negatives + 1e-7)
 
     #-------------------------
     # return results
@@ -705,28 +664,37 @@ def gps(
             "EBGM": ebgm,
             "EB05" : EB05,
             "EB95" : EB95,
-            "p_{H0}": p_h0,
             "N_{11}": n11,
             "N_{10}": n10,
             "N_{01}": n01,
             "N_{00}": n00,
-            "FDR": FDR,
-            "FNR": FNR,
-            "Se": Se,
-            "Sp": Sp, 
         }
     )
-    RES.all_signals = RES.all_signals.sort_values(by=["EB05"], ascending=False)
     
-
-    # List of Signals generated according to the method
-    #-------------------------------------------------------
-    RES.all_signals.index = np.arange(0, len(RES.all_signals.index))
-
     # 1. Tri par EBGM décroissant 
     #---------------------------------------------------
     RES.all_signals = RES.all_signals.sort_values(by=["EB05"], ascending=False)
     RES.all_signals.index = np.arange(0, len(RES.all_signals.index))
+
+    # 2. TRI CRITIQUE PAR EB05 DÉCROISSANT AVANT CALCUL CUMULATIF
+    RES.all_signals = RES.all_signals.sort_values(by=["EB05"], ascending=False).reset_index(drop=True)
+
+    # 3. CALCUL CORRECT DE FDR, FNR, Se, Sp SUR LES DONNÉES TRIÉES
+    p_h0 = RES.all_signals["p_{H0}"].values
+    p_h1 = 1.0 - p_h0
+
+    total_true_signals = np.sum(p_h1)
+    total_true_negatives = np.sum(p_h0)
+
+    true_positives_cum = np.cumsum(p_h1)
+    false_positives_cum = np.cumsum(p_h0)
+    post_range = np.arange(1, len(p_h0) + 1)
+
+    # Affectation des séries triées au DataFrame
+    RES.all_signals["FDR"] = false_positives_cum / post_range
+    RES.all_signals["Se"] = true_positives_cum / (total_true_signals + 1e-7)
+    RES.all_signals["FNR"] = (total_true_signals - true_positives_cum) / (total_true_signals + 1e-7)
+    RES.all_signals["Sp"] = (total_true_negatives - false_positives_cum) / (total_true_negatives + 1e-7)
 
     
     # 2. Application of the FDA dual criterion: EBGM >= 2 AND EB05 (LB05) > 1 or EB05 >= 2
