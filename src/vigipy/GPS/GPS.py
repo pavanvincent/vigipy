@@ -461,7 +461,7 @@ def gps(
     truncate=False,
     maxiter=500,
     criterion= "EB05>=2",
-) 
+): 
     """Computes signal detection based on Multi-item enabled Gamma Poisson Shrinkage (GPS).
 
     Clinical Intuition:
