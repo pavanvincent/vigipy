@@ -540,13 +540,13 @@ def gps(
     }
 
     computation_params = pd.DataFrame.from_dict({
-         "minimization_method": minimization_method,
-         "minimization_bounds": minimization_bounds,
-         "priori_init": priors,
-         "method_alpha": method_alpha,
-         "expected_method": expected_method,
-         "minimization_options": minimization_options
-         }, orient="index", columns=["Value"])
+        "minimization_method": minimization_method,
+        "minimization_bounds": minimization_bounds,
+        "priori_init": priors,
+        "method_alpha": method_alpha,
+        "expected_method": expected_method,
+        "minimization_options": minimization_options
+        }, orient="index", columns=["Value"])
 
 
     priors = np.asarray(
