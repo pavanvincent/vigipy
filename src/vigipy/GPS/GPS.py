@@ -408,24 +408,19 @@ def _optimize_gps_priors(
     elif minimization_bounds is None:
         minimization_bounds = ((EPS, 20), (EPS, 10), (EPS, 20), (EPS, 10), (0, 1))
 
-    if minimization_options is None:
-        minimization_options = {}
+    opts = {"maxiter": 500}
+    if minimization_options:
+        opts.update(minimization_options)
 
     if not truncate:
-        data_cont = container.contingency
-        n1__mat = data_cont.sum(axis=1)
-        n_1_mat = data_cont.sum(axis=0)
-        E_c = (np.outer(n1__mat.values, n_1_mat.values) / N).ravel(order="F")
-        n11_c = np.asarray(data_cont.values, dtype=np.float64).ravel(order="F")
-        gammaln_n11_1_c = gammaln(n11_c + 1.0)
+        gammaln_n11_1 = gammaln(n11 + 1.0)
         p_out = minimize(
-            non_truncated_likelihood,
+            non_truncated_likelihood, 
             x0=priors,
-            args=(n11_c, E_c, gammaln_n11_1_c),
-            options={"maxiter": 500},
+            args=(n11, expected, gammaln_n11_1),
+            options=opts,             
             method=minimization_method,
             bounds=minimization_bounds,
-            **minimization_options,
         )
     else:
         trunc = truncate_thres - 1
@@ -433,7 +428,7 @@ def _optimize_gps_priors(
         E_trunc = expected[n11 >= truncate_thres]
         gammaln_n11_1 = gammaln(n11_trunc + 1.0)
         p_out = minimize(
-            truncated_likelihood,
+            truncated_likelihood,      
             x0=priors,
             args=(
                 n11_trunc,
@@ -441,10 +436,9 @@ def _optimize_gps_priors(
                 trunc,
                 gammaln_n11_1,
             ),
-            options={"maxiter": 500},
+            options=opts,              
             method=minimization_method,
             bounds=minimization_bounds,
-            **minimization_options,
         )
 
     priors_opt = p_out.x
