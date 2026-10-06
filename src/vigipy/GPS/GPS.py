@@ -626,105 +626,105 @@ def gps(
         priors[3] + expected,
     )
 
-     #----------------------------------------------------------------
-     # Compute FDR (False Detection Rate), FNR (False Negative Rate)
-     # Compte Se (sensitivity) and Sp (specificity)
-     #----------------------------------------------------------------
+    #----------------------------------------------------------------
+    # Compute FDR (False Detection Rate), FNR (False Negative Rate)
+    # Compte Se (sensitivity) and Sp (specificity)
+    #----------------------------------------------------------------
     
-     # 1. Compute Null (H0) and Alternative (H1) hypothesis probability
-     #----------------------------------------------------------------
-     p_h0 = np.asarray(posterior_probability)  # posterior_probability represents P(H0), the null hypothesis probability
-     p_h1 = 1.0 - p_h0                         # Alternative hypothesis probability (true signal)
+    # 1. Compute Null (H0) and Alternative (H1) hypothesis probability
+    #----------------------------------------------------------------
+    p_h0 = np.asarray(posterior_probability)  # posterior_probability represents P(H0), the null hypothesis probability
+    p_h1 = 1.0 - p_h0                         # Alternative hypothesis probability (true signal)
     
-     # 2. Compute total expected masses in the baseline
-     #-------------------------------------------------
-     total_true_signals = np.sum(p_h1)
-     total_true_negatives = np.sum(p_h0)
+    # 2. Compute total expected masses in the baseline
+    #-------------------------------------------------
+    total_true_signals = np.sum(p_h1)
+    total_true_negatives = np.sum(p_h0)
     
-     # 3. Cumulative sums from left to right (from highest to lowest signal)
-     #-----------------------------------------------------------------------
-     true_positives_cum = np.cumsum(p_h1)
-     false_positives_cum = np.cumsum(p_h0)
-     post_range = np.arange(1, num_cell + 1)
+    # 3. Cumulative sums from left to right (from highest to lowest signal)
+    #-----------------------------------------------------------------------
+    true_positives_cum = np.cumsum(p_h1)
+    false_positives_cum = np.cumsum(p_h0)
+    post_range = np.arange(1, num_cell + 1)
     
     
-     # FDR: proportion of false positives among the k raised alerts
-     #--------------------------------------------------------------
-     FDR = false_positives_cum / post_range
+    # FDR: proportion of false positives among the k raised alerts
+    #--------------------------------------------------------------
+    FDR = false_positives_cum / post_range
     
-     # Sensitivity (Se): proportion of captured true signals out of the total available
-     #----------------------------------------------------------------------------------
-     Se = true_positives_cum / (total_true_signals + 1e-7)
+    # Sensitivity (Se): proportion of captured true signals out of the total available
+    #----------------------------------------------------------------------------------
+    Se = true_positives_cum / (total_true_signals + 1e-7)
     
-     # FNR: proportion of missed true signals (those remaining to the right of the threshold)
-     # Strictly equivalent to: FNR = 1.0 - Se
-     #----------------------------------------------------------------------------------------
-     missed_true_signals = total_true_signals - true_positives_cum
-     FNR = missed_true_signals / (total_true_signals + 1e-7)
+    # FNR: proportion of missed true signals (those remaining to the right of the threshold)
+    # Strictly equivalent to: FNR = 1.0 - Se
+    #----------------------------------------------------------------------------------------
+    missed_true_signals = total_true_signals - true_positives_cum
+    FNR = missed_true_signals / (total_true_signals + 1e-7)
 
-     # Specificity (Sp): proportion of correctly identified true negatives
-     # Those are the true negatives that were NOT raised as alerts (remaining to the right)
-     #---------------------------------------------------------------------------------------
-     true_negatives_remaining = total_true_negatives - false_positives_cum
-     Sp = true_negatives_remaining / (total_true_negatives + 1e-7)
+    # Specificity (Sp): proportion of correctly identified true negatives
+    # Those are the true negatives that were NOT raised as alerts (remaining to the right)
+    #---------------------------------------------------------------------------------------
+    true_negatives_remaining = total_true_negatives - false_positives_cum
+    Sp = true_negatives_remaining / (total_true_negatives + 1e-7)
 
-     #-------------------------
-     # return results
-     #------------------------
-     name = DATA["product_name"]
-     ae = DATA["ae_name"]
-     RES = Container(params=True)
-     # list of the parameters used
-     RES.param["input_params"] = input_params
-     RES.param["computation_params"] = computation_params
-     RES.param["convergence"] = code_convergence
-     RES.param["priors"] = priors
+    #-------------------------
+    # return results
+    #------------------------
+    name = DATA["product_name"]
+    ae = DATA["ae_name"]
+    RES = Container(params=True)
+    # list of the parameters used
+    RES.param["input_params"] = input_params
+    RES.param["computation_params"] = computation_params
+    RES.param["convergence"] = code_convergence
+    RES.param["priors"] = priors
 
-     #--------------------------------------
-     # SIGNALS RESULTS and presentation
-     #--------------------------------------
-     RES.all_signals = pd.DataFrame(
-         {
-             "Product": name,
-             "Adverse Event": ae,
-             "EBGM": ebgm,
-             "EB05" : LB05,
-             "EB95" : UB95,
-             "p_{H0}": p_h0,
-             "N_{11}": n11,
-             "N_{10}": n10,
-             "N_{01}": n01,
-             "N_{00}": n00,
-             "FDR": FDR,
-             "FNR": FNR,
-             "Se": Se,
-             "Sp": Sp, 
-         }
-     )
-     RES.all_signals = RES.all_signals.sort_values(by=["EB05"], ascending=False)
+    #--------------------------------------
+    # SIGNALS RESULTS and presentation
+    #--------------------------------------
+    RES.all_signals = pd.DataFrame(
+        {
+            "Product": name,
+            "Adverse Event": ae,
+            "EBGM": ebgm,
+            "EB05" : LB05,
+            "EB95" : UB95,
+            "p_{H0}": p_h0,
+            "N_{11}": n11,
+            "N_{10}": n10,
+            "N_{01}": n01,
+            "N_{00}": n00,
+            "FDR": FDR,
+            "FNR": FNR,
+            "Se": Se,
+            "Sp": Sp, 
+        }
+    )
+    RES.all_signals = RES.all_signals.sort_values(by=["EB05"], ascending=False)
     
 
-     # List of Signals generated according to the method
-     #-------------------------------------------------------
-     RES.all_signals.index = np.arange(0, len(RES.all_signals.index))
+    # List of Signals generated according to the method
+    #-------------------------------------------------------
+    RES.all_signals.index = np.arange(0, len(RES.all_signals.index))
 
-     # 1. Tri par EBGM décroissant 
-     #---------------------------------------------------
-     RES.all_signals = RES.all_signals.sort_values(by=["EB05"], ascending=False)
-     RES.all_signals.index = np.arange(0, len(RES.all_signals.index))
+    # 1. Tri par EBGM décroissant 
+    #---------------------------------------------------
+    RES.all_signals = RES.all_signals.sort_values(by=["EB05"], ascending=False)
+    RES.all_signals.index = np.arange(0, len(RES.all_signals.index))
 
     
-     # 2. Application of the FDA dual criterion: EBGM >= 2 AND EB05 (LB05) > 1 or EB05 >= 2
-     # We create a Boolean mask to identify the rows that meet both conditions
-     if  criterion == "EB05>=2" :
-         signal_mask = (RES.all_signals["EB05"] >= np.float64(2)) 
-     elif criterion == "EB05 > 1 & EBGM >=2":
-         signal_mask = (RES.all_signals["EBGM"] >= np.float64(2)) & (RES.all_signals["EB05"] > np.float64(1))
-     # 3. Signal extraction and counting
-     RES.signals = RES.all_signals[signal_mask].copy()
-     RES.num_signals = len(RES.signals)
+    # 2. Application of the FDA dual criterion: EBGM >= 2 AND EB05 (LB05) > 1 or EB05 >= 2
+    # We create a Boolean mask to identify the rows that meet both conditions
+    if  criterion == "EB05>=2" :
+        signal_mask = (RES.all_signals["EB05"] >= np.float64(2)) 
+    elif criterion == "EB05 > 1 & EBGM >=2":
+        signal_mask = (RES.all_signals["EBGM"] >= np.float64(2)) & (RES.all_signals["EB05"] > np.float64(1))
+    # 3. Signal extraction and counting
+    RES.signals = RES.all_signals[signal_mask].copy()
+    RES.num_signals = len(RES.signals)
    
-     return RES
+    return RES
 
 
 def non_truncated_likelihood(p, n11, E, gammaln_n11_1=None):
