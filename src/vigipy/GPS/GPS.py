@@ -695,10 +695,14 @@ def gps(
     
     # 2. Application of the FDA dual criterion: EBGM >= 2 AND EB05 (LB05) > 1 or EB05 >= 2
     # We create a Boolean mask to identify the rows that meet both conditions
-    if  criterion == "EB05>=2" :
-        signal_mask = (RES.all_signals["EB05"] >= np.float64(2)) 
+    #--------------------------------------------------------------------------------------
+    if criterion == "EB05>=2":
+        signal_mask = RES.all_signals["EB05"] >= 2.0
     elif criterion == "EB05 > 1 & EBGM >=2":
-        signal_mask = (RES.all_signals["EBGM"] >= np.float64(2)) & (RES.all_signals["EB05"] > np.float64(1))
+        signal_mask = (RES.all_signals["EBGM"] >= 2.0) & (RES.all_signals["EB05"] > 1.0)
+    else:
+        signal_mask = pd.Series(True, index=RES.all_signals.index)
+    
     # 3. Signal extraction and counting
     RES.signals = RES.all_signals[signal_mask].copy()
     RES.num_signals = len(RES.signals)
