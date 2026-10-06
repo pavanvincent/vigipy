@@ -495,18 +495,18 @@ def gps(
         AnalysisResult containing detected signals, all evaluated pairs, signal count,
         and model parameters.
     """
-    relative_risk: float = 1,
-    decision_metric: DecisionMetric = "rank",
-    decision_thres: float = 0.05,
-    ranking_statistic: GPSRankingStatistic = "log2",
-    truncate_thres: float = 1,
-    prior_init: dict[str, float] | None = None,
-    prior_param: list[float] | None = None,
-    expected_method: ExpectedMethod = "mantel-haentzel",
-    method_alpha: float = 1,
-    minimization_method: str = "SLSQP",
-    minimization_bounds: tuple[tuple[float, float], ...] = ((EPS, 20), (EPS, 10), (EPS, 20), (EPS, 10), (0, 1)),
-    minimization_options: dict | None = None,
+   relative_risk = 1.0
+    decision_metric = "rank"
+    decision_thres = 0.05
+    ranking_statistic = "log2"
+    truncate_thres = 1.0
+    prior_init = None
+    prior_param = None
+    expected_method = "mantel-haentzel"
+    method_alpha = 1.0
+    minimization_method = "SLSQP"
+    minimization_bounds = ((EPS, 20), (EPS, 10), (EPS, 20), (EPS, 10), (0, 1))
+    minimization_options = None
 
 
 
