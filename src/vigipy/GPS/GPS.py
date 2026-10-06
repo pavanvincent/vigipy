@@ -456,22 +456,12 @@ def _optimize_gps_priors(
 
 
 def gps(
-    container: DataContainer,
-    relative_risk: float = 1,
-    min_events: int = 3,
-    decision_metric: DecisionMetric = "rank",
-    decision_thres: float = 0.05,
-    ranking_statistic: GPSRankingStatistic = "log2",
-    truncate: bool = True,
-    truncate_thres: float = 1,
-    prior_init: dict[str, float] | None = None,
-    prior_param: list[float] | None = None,
-    expected_method: ExpectedMethod = "mantel-haentzel",
-    method_alpha: float = 1,
-    minimization_method: str = "Nelder-Mead",
-    minimization_bounds: tuple[tuple[float, float], ...] = ((EPS, 20), (EPS, 10), (EPS, 20), (EPS, 10), (0, 1)),
-    minimization_options: dict | None = None,
-) -> AnalysisResult:
+    container,
+    min_events=4,
+    truncate=False,
+    maxiter=500,
+    criterion= "EB05>=2",
+) 
     """Computes signal detection based on Multi-item enabled Gamma Poisson Shrinkage (GPS).
 
     Clinical Intuition:
@@ -505,6 +495,22 @@ def gps(
         AnalysisResult containing detected signals, all evaluated pairs, signal count,
         and model parameters.
     """
+    relative_risk: float = 1,
+    decision_metric: DecisionMetric = "rank",
+    decision_thres: float = 0.05,
+    ranking_statistic: GPSRankingStatistic = "log2",
+    truncate_thres: float = 1,
+    prior_init: dict[str, float] | None = None,
+    prior_param: list[float] | None = None,
+    expected_method: ExpectedMethod = "mantel-haentzel",
+    method_alpha: float = 1,
+    minimization_method: str = "SLSQP",
+    minimization_bounds: tuple[tuple[float, float], ...] = ((EPS, 20), (EPS, 10), (EPS, 20), (EPS, 10), (0, 1)),
+    minimization_options: dict | None = None,
+
+
+
+    
     if prior_init is None:
         prior_init = {
             "alpha1": 0.2041,
@@ -620,50 +626,105 @@ def gps(
         priors[3] + expected,
     )
 
-    # Assignment based on ranking statistic
-    if ranking_statistic == "p_value":
-        RankStat = posterior_probability
-    elif ranking_statistic == "quantile":
-        RankStat = LB
-    elif ranking_statistic == "log2":
-        RankStat = np.asarray(EBlog2, dtype=np.float64)
-    else:
-        RankStat = np.asarray(EBlog2, dtype=np.float64)
+     #----------------------------------------------------------------
+     # Compute FDR (False Detection Rate), FNR (False Negative Rate)
+     # Compte Se (sensitivity) and Sp (specificity)
+     #----------------------------------------------------------------
+    
+     # 1. Compute Null (H0) and Alternative (H1) hypothesis probability
+     #----------------------------------------------------------------
+     p_h0 = np.asarray(posterior_probability)  # posterior_probability represents P(H0), the null hypothesis probability
+     p_h1 = 1.0 - p_h0                         # Alternative hypothesis probability (true signal)
+    
+     # 2. Compute total expected masses in the baseline
+     #-------------------------------------------------
+     total_true_signals = np.sum(p_h1)
+     total_true_negatives = np.sum(p_h0)
+    
+     # 3. Cumulative sums from left to right (from highest to lowest signal)
+     #-----------------------------------------------------------------------
+     true_positives_cum = np.cumsum(p_h1)
+     false_positives_cum = np.cumsum(p_h0)
+     post_range = np.arange(1, num_cell + 1)
+    
+    
+     # FDR: proportion of false positives among the k raised alerts
+     #--------------------------------------------------------------
+     FDR = false_positives_cum / post_range
+    
+     # Sensitivity (Se): proportion of captured true signals out of the total available
+     #----------------------------------------------------------------------------------
+     Se = true_positives_cum / (total_true_signals + 1e-7)
+    
+     # FNR: proportion of missed true signals (those remaining to the right of the threshold)
+     # Strictly equivalent to: FNR = 1.0 - Se
+     #----------------------------------------------------------------------------------------
+     missed_true_signals = total_true_signals - true_positives_cum
+     FNR = missed_true_signals / (total_true_signals + 1e-7)
 
-    FDR, FNR, FOR, Se, Sp = compute_bayesian_metrics(posterior_probability, num_cell, ranking_statistic, RankStat)
-    num_signals = determine_num_signals(
-        FDR, RankStat, decision_metric, decision_thres, ranking_statistic, num_cell
-    )
+     # Specificity (Sp): proportion of correctly identified true negatives
+     # Those are the true negatives that were NOT raised as alerts (remaining to the right)
+     #---------------------------------------------------------------------------------------
+     true_negatives_remaining = total_true_negatives - false_positives_cum
+     Sp = true_negatives_remaining / (total_true_negatives + 1e-7)
 
-    params = build_params(
-        "gps", input_params,
-        prior_init=prior_init, prior_param=priors, convergence=code_convergence,
-    )
+     #-------------------------
+     # return results
+     #------------------------
+     name = DATA["product_name"]
+     ae = DATA["ae_name"]
+     RES = Container(params=True)
+     # list of the parameters used
+     RES.param["input_params"] = input_params
+     RES.param["computation_params"] = computation_params
+     RES.param["convergence"] = code_convergence
+     RES.param["priors"] = priors
 
-    extra_cols = {
-        "EBGM": ebgm,
-        "LowerBound": LB,
-        "UpperBound": UB,
-    }
+     #--------------------------------------
+     # SIGNALS RESULTS and presentation
+     #--------------------------------------
+     RES.all_signals = pd.DataFrame(
+         {
+             "Product": name,
+             "Adverse Event": ae,
+             "EBGM": ebgm,
+             "EB05" : LB05,
+             "EB95" : UB95,
+             "p_{H0}": p_h0,
+             "N_{11}": n11,
+             "N_{10}": n10,
+             "N_{01}": n01,
+             "N_{00}": n00,
+             "FDR": FDR,
+             "FNR": FNR,
+             "Se": Se,
+             "Sp": Sp, 
+         }
+     )
+     RES.all_signals = RES.all_signals.sort_values(by=["EB05"], ascending=False)
+    
 
-    return build_bayesian_result(
-        DATA,
-        count=n11,
-        expected=expected,
-        ranking_statistic=ranking_statistic,
-        rank_stat=RankStat,
-        posterior_probability=posterior_probability,
-        n1j=n1j,
-        ni1=ni1,
-        FDR=FDR,
-        FNR=FNR,
-        FOR=FOR,
-        Se=Se,
-        Sp=Sp,
-        num_signals=num_signals,
-        params=params,
-        extra_cols=extra_cols,
-    )
+     # List of Signals generated according to the method
+     #-------------------------------------------------------
+     RES.all_signals.index = np.arange(0, len(RES.all_signals.index))
+
+     # 1. Tri par EBGM décroissant 
+     #---------------------------------------------------
+     RES.all_signals = RES.all_signals.sort_values(by=["EB05"], ascending=False)
+     RES.all_signals.index = np.arange(0, len(RES.all_signals.index))
+
+    
+     # 2. Application of the FDA dual criterion: EBGM >= 2 AND EB05 (LB05) > 1 or EB05 >= 2
+     # We create a Boolean mask to identify the rows that meet both conditions
+     if  criterion == "EB05>=2" :
+         signal_mask = (RES.all_signals["EB05"] >= np.float64(2)) 
+     elif criterion == "EB05 > 1 & EBGM >=2":
+         signal_mask = (RES.all_signals["EBGM"] >= np.float64(2)) & (RES.all_signals["EB05"] > np.float64(1))
+     # 3. Signal extraction and counting
+     RES.signals = RES.all_signals[signal_mask].copy()
+     RES.num_signals = len(RES.signals)
+   
+     return RES
 
 
 def non_truncated_likelihood(p, n11, E, gammaln_n11_1=None):
