@@ -576,7 +576,7 @@ def gps(
     computation_params = pd.DataFrame.from_dict({
         "minimization_method": minimization_method,
         "minimization_bounds": minimization_bounds,
-        "priori_init": priors,
+        "priori_init": prior_init,
         "method_alpha": method_alpha,
         "expected_method": expected_method,
         "minimization_options": minimization_options
@@ -671,11 +671,6 @@ def gps(
             "p_{H0}": posterior_probability,
         }
     )
-    
-    # 1. Tri par EBGM décroissant 
-    #---------------------------------------------------
-    RES.all_signals = RES.all_signals.sort_values(by=["EB05"], ascending=False)
-    RES.all_signals.index = np.arange(0, len(RES.all_signals.index))
 
     # 2. TRI CRITIQUE PAR EB05 DÉCROISSANT AVANT CALCUL CUMULATIF
     RES.all_signals = RES.all_signals.sort_values(by=["EB05"], ascending=False).reset_index(drop=True)
