@@ -366,7 +366,7 @@ import pandas as pd
 from scipy.special import digamma, gdtr, gammaln, betainc
 from scipy.optimize import minimize
 
-from ..utils.Container import  DataContainer
+from ..utils.Container import Container
 from ..utils import calculate_expected
 # from ..utils.common import (
 #    compute_bayesian_metrics,
@@ -391,7 +391,7 @@ BOUNDED_METHODS = {
 
 
 def _optimize_gps_priors(
-    container: DataContainer,
+    container: Container,
     priors: np.ndarray,
     truncate: bool,
     truncate_thres: float,
