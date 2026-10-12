@@ -233,57 +233,78 @@ def bcpnn(
 #--------------------------------------
 import numpy as np
 from numba import njit, prange
+import random
 
-@njit(parallel=True, fastmath=True)
+@njit(parallel=True)
 def _bcpnn_numba_kernel(g11, g10, g01, g00, num_MC):
     num_cell = len(g11)
     
     # Pre-allocation of final results (one element per cell)
+    #--------------------------------------------------------
     posterior_prob = np.empty(num_cell, dtype=np.float64)
     IC = np.empty(num_cell, dtype=np.float64)
     lower_bound = np.empty(num_cell, dtype=np.float64)
     upper_bound = np.empty(num_cell, dtype=np.float64)
     
-    # 'prange' tells Numba to parallelize this loop across all CPU cores
+    # Pre-calculate precise integer indices for percentiles to avoid out-of-bounds errors
+    #-------------------------------------------------------------------------------------
+    idx_25 = min(int(num_MC * 0.025), num_MC - 1)
+    idx_50 = min(int(num_MC * 0.500), num_MC - 1)
+    idx_975 = min(int(num_MC * 0.975), num_MC - 1)
+    
+    # 'prange' parallelizes this loop across all available CPU cores safely
+    #----------------------------------------------------------------------
     for m in prange(num_cell):
-        # Local array for each thread to store the draws of the current cell
+        # Local array allocated per thread for the current cell's MC draws
         ic_monte = np.empty(num_MC, dtype=np.float64)
         
-        # Monte Carlo simulation for cell 'm'
+        # Extract hyperparameters for the current cell
+        alpha11 = g11[m]
+        alpha10 = g10[m]
+        alpha01 = g01[m]
+        alpha00 = g00[m]
+        
+        # Monte Carlo simulation loop for cell 'm'
+        #------------------------------------------
         for i in range(num_MC):
-            # Tirage de lois Gamma thread-safe
-            gamma11 = np.random.gamma(g11[m], 1.0)
-            gamma10 = np.random.gamma(g10[m], 1.0)
-            gamma01 = np.random.gamma(g01[m], 1.0)
-            gamma00 = np.random.gamma(g00[m], 1.0)
+            # Use Numba-supported thread-safe random generator (beta parameter is 1.0)
+            gamma11 = random.gammavariate(alpha11, 1.0)
+            gamma10 = random.gammavariate(alpha10, 1.0)
+            gamma01 = random.gammavariate(alpha01, 1.0)
+            gamma00 = random.gammavariate(alpha00, 1.0)
             
             total = gamma11 + gamma10 + gamma01 + gamma00
             
-            p11 = gamma11 / total
-            p1_ = (gamma11 + gamma10) / total
-            p_1 = (gamma11 + gamma01) / total
-            
-            # Avoid division by zero if the probabilities are zero
-            if p1_ * p_1 > 0 and p11 > 0:
-                ic_monte[i] = np.log2(p11 / (p1_ * p_1))
+            # Avoid unexpected division by zero for the total sum
+            #-----------------------------------------------------
+            if total > 0.0:
+                p11 = gamma11 / total
+                p1_ = (gamma11 + gamma10) / total
+                p_1 = (gamma11 + gamma01) / total
+                
+                # Check boundaries to safely apply log2
+                if p1_ > 0.0 and p_1 > 0.0 and p11 > 0.0:
+                    ic_monte[i] = np.log2(p11 / (p1_ * p_1))
+                else:
+                    ic_monte[i] = -np.inf
             else:
-                ic_monte[i] = -np.inf # Numerical equivalent of an impossible value
+                ic_monte[i] = -np.inf
         
-        # Local rapid sorting (highly optimized by Numba)
+        # Highly optimized in-place sort performance by Numba
+        #------------------------------------------------------
         ic_monte.sort()
         
-        # Calculation of the posterior probability (ic_monte < 0.0)
-        under_zero = 0
-        for i in range(num_MC):
-            if ic_monte[i] < 0.0:
-                under_zero += 1
-                
-        posterior_prob[m] = under_zero / num_MC
+        # Fast binary search to find how many elements are strictly below 0.0 O(log N)
+        #-----------------------------------------------------------------------------
+        under_zero_count = np.searchsorted(ic_monte, 0.0, side='left')
+        posterior_prob[m] = under_zero_count / num_MC
         
-        # Extracting percentiles directly from the sorted table
-        IC[m] = ic_monte[int(round(num_MC * 0.50))]
-        lower_bound[m] = ic_monte[int(round(num_MC * 0.025))]
-        upper_bound[m] = ic_monte[int(round(num_MC * 0.975))]
+        # Extract exact percentiles directly from the sorted array
+        #------------------------------------------------------------
+        lower_bound[m] = ic_monte[idx_25]
+        IC[m] = ic_monte[idx_50]
+        upper_bound[m] = idx_975
         
     return posterior_prob, IC, lower_bound, upper_bound
+
 
