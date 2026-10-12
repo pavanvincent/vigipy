@@ -54,24 +54,40 @@ def bcpnn(
         q2 = 1 + N - ni1
         r1 = 1 + n11
         r2b = N - n11 - 1 + (2 + N) ** 2 / (q1 * p1)
-        # Calculate the Information Criterion
+
+        # 1. Compute the Information Criterion (IC)
+        #--------------------------------------------
         digamma_term = (
             digamma(r1) - digamma(r1 + r2b) - (digamma(p1) - digamma(p1 + p2) + digamma(q1) - digamma(q1 + q2))
         )
         IC = np.asarray((np.log(2) ** -1) * digamma_term, dtype=np.float64)
+        
+        # 2.Compute the IC Variance calculation (Summing component variances)
+        # Each Beta(x, y) component variance is: trigamma(x) - trigamma(x + y)
+        #----------------------------------------------------------------------
         IC_variance = np.asarray(
             (np.log(2) ** -2)
             * (
-                (trigamma(r1)
-                - trigamma(r1 + r2b))
-                + (trigamma(p1) - trigamma(p1 + p2)) + (trigamma(q1) - trigamma(q1 + q2))
+                (trigamma(r1) - trigamma(r1 + r2b))
+                + (trigamma(p1) - trigamma(p1 + p2))
+                + (trigamma(q1) - trigamma(q1 + q2))
             ),
             dtype=np.float64,
         )
-        relative_risk=1
-        posterior_prob = norm.cdf(np.log2(relative_risk), IC, np.sqrt(IC_variance))
-        lower_bound = norm.ppf(0.025, IC, np.sqrt(IC_variance))
-        upper_bound = norm.ppf(0.975, IC, np.sqrt(IC_variance))
+        
+        # 3. Compute posterior probabilities and confidence interval bounds
+        #-----------------------------------------------------------------------
+        relative_risk = 1.0
+        IC_std = np.sqrt(IC_variance)
+        
+        # P(H0): Posterior probability that IC <= log2(relative_risk)
+        #----------------------------------------------------------------
+        posterior_prob = norm.cdf(np.log2(relative_risk), loc=IC, scale=IC_std)
+        
+        # 95% Confidence Interval bounds for the IC index
+        #--------------------------------------------------------
+        lower_bound = norm.ppf(0.025, loc=IC, scale=IC_std)
+        upper_bound = norm.ppf(0.975, loc=IC, scale=IC_std)
     else:
         # Vectorized priors (direct one-step computation)
         q1j = (n1j + 0.5) / (N + 1)
