@@ -110,12 +110,22 @@ def gps(
     Parameters:
         container: A container object holding the input data, including event counts (`events`),
             product-event pairs (`product_aes`), and across-brand counts (`count_across_brands`).
-        relative_risk: The threshold for relative risk used in posterior probability calculations.
         min_events: Minimum number of events required for a pair to be retained.
+        truncate: Whether to truncate likelihoods below a threshold for numerical stability.
+        maxiter: maximum number of iteration in optimization algorithm (likelihood optimization
+            for getting hypergeometric factors
+        criterion: criterion retained for signal detection. Either (EB05 >=2) or 
+            (EBGM >= 2 and EB05 > 1)
+            
+    Returns:
+        AnalysisResult containing detected signals, all evaluated pairs, signal count,
+        and model parameters.
+
+    old arguments, now local parameters. 
+        relative_risk: The threshold for relative risk used in posterior probability calculations.
         decision_metric: Decision rule for signal detection ('rank', 'fdr', or 'signals').
         decision_thres: Threshold used in the decision rule to filter significant signals.
         ranking_statistic: Ranking statistic to order results ('log2', 'p_value', or 'quantile').
-        truncate: Whether to truncate likelihoods below a threshold for numerical stability.
         truncate_thres: Truncation threshold for likelihood values if truncate is True.
         prior_init: Initial values for the prior distributions (alpha1, beta1, alpha2, beta2, w).
         prior_param: Manually provided prior distribution parameters. If None, estimates priors via ML.
@@ -124,10 +134,6 @@ def gps(
         minimization_method: Optimization algorithm for estimating prior parameters (default: 'Nelder-Mead').
         minimization_bounds: Bounds on prior parameters during optimization.
         minimization_options: Options passed directly to scipy.optimize.minimize.
-
-    Returns:
-        AnalysisResult containing detected signals, all evaluated pairs, signal count,
-        and model parameters.
     """
     relative_risk = 1.0
     decision_metric = "rank"
